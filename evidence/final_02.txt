@@ -1,0 +1,28 @@
+Changed database context to 'BadmintonCourtManagement'.
+
+(0 rows affected)
+
+(0 rows affected)
+
+(0 rows affected)
+
+(0 rows affected)
+
+(0 rows affected)
+ Seed: bắt đầu nạp dữ liệu demo...
+
+(7 rows affected)
+
+(6 rows affected)
+
+(15 rows affected)
+
+(3 rows affected)
+
+(2 rows affected)
+ Seed hoàn tất.
+Users       Courts      Bookings    ActivityLogs Notifications
+----------- ----------- ----------- ------------ -------------
+          7           6          15            3             2
+
+(1 rows affected)

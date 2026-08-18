@@ -1,0 +1,19 @@
+Changed database context to 'BadmintonCourtManagement'.
+ Đợi Window A sẵn sàng (cờ CC01_A_READY)...
+UserId                               Username                                           Role                 IsActive LastLogin
+------------------------------------ -------------------------------------------------- -------------------- -------- --------------------------------------
+A1000001-0000-0000-0000-000000000001 manager                                            MANAGER                     1                    2026-08-18 10:36:51
+ >>> B sẵn sàng - đua approve b9 với Window A. <<<
+CourtId
+------------------------------------
+C1000001-0000-0000-0000-000000000001
+ b9 đã BOOKED thành công.
+BookingId                            Status
+------------------------------------ --------------------
+B1000001-0000-0000-0000-000000000009 BOOKED
+ ASSERTION PASS: tối đa 1 trong (b4,b9) BOOKED.
+ >>> CC-02 sẽ tự đồng bộ: chờ A báo CC02_A_HOLD (không cần thao tác tay). <<<
+ Đợi Window A giữ khóa C5 (cờ CC02_A_HOLD)...
+ UPDATE C5 (sẽ bị block tới khi Window A COMMIT)...
+ Update hoàn tất sau khi hết block. Giá cuối = 120000 (không lost update).
+ ASSERTION (xem Window A): giá cuối khi A đọc phải là 120000.

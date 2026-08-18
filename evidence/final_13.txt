@@ -1,0 +1,23 @@
+Changed database context to 'BadmintonCourtManagement'.
+ Bắt đầu: A muốn khóa theo thứ tự Courts(C1) -> Bookings(b1) (kịch bản lỗi).
+ Đã khóa Courts C1. Chờ 3 giây để B khóa Bookings b1...
+ >>> VICTIM: bị deadlock (1205). Transaction bị ROLLBACK - đúng bản chất deadlock.
+ Kết luận DL-01: A là deadlock victim.
+
+ FIX: lock ordering nhất quán Court -> Booking.
+ Đã khóa Courts C2. Chờ 3 giây...
+ Đã khóa Bookings b5. Hoàn tất.
+ >>> Commit thành công - KHÔNG deadlock với lock ordering nhất quán.
+
+ REGRESSION: Approve (A) vs Cancel (B) cùng booking - lock ordering Court->Booking.
+UserId                               Username                                           Role                 IsActive LastLogin
+------------------------------------ -------------------------------------------------- -------------------- -------- --------------------------------------
+A1000001-0000-0000-0000-000000000001 manager                                            MANAGER                     1                    2026-08-18 10:37:07
+ >>> 5 giây: chạy 14_deadlock_demo_session_B.sql (Window B) NGAY <<<
+CourtId
+------------------------------------
+C1000001-0000-0000-0000-000000000003
+ Approve thành công (booking BOOKED). Vẫn giữ khóa 4s để B chạy.
+ Đã nhả khóa (COMMIT outer).
+ ASSERTION PASS: không deadlock - lock ordering Court->Booking thống nhất.
+ Trạng thái cuối booking DL-03: CANCELLED

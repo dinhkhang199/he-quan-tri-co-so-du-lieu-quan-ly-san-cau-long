@@ -13,6 +13,9 @@ GO
 
 -- ============================================================
 -- 1. sp_Login: xác thực, chặn inactive, cập nhật LastLogin
+--    Đồng thời thiết lập SESSION_CONTEXT để các SP khác dùng để kiểm
+--    tra actor (security contract section Q). App phải gọi sp_Login
+--    trước khi gọi bất kỳ SP nghiệp vụ nào khác.
 -- ============================================================
 IF OBJECT_ID(N'dbo.sp_Login', N'P') IS NOT NULL DROP PROCEDURE dbo.sp_Login;
 GO
@@ -41,6 +44,10 @@ BEGIN
         THROW 50002, N'Đăng nhập thất bại: tài khoản đã bị vô hiệu hóa (inactive).', 1;
 
     UPDATE dbo.Users SET LastLogin = SYSDATETIME() WHERE UserId = @UserId;
+
+    -- Thiết lập SESSION_CONTEXT để các SP sau dùng xác thực actor
+    EXEC sp_set_session_context @key = N'UserId',  @value = @UserId;
+    EXEC sp_set_session_context @key = N'Role',    @value = @Role;
 
     SELECT UserId, Username, Role, IsActive, LastLogin
     FROM dbo.Users
@@ -72,6 +79,14 @@ BEGIN
         THROW 50010, N'Người dùng không tồn tại hoặc đang inactive.', 1;
     IF @Role <> N'CUSTOMER'
         THROW 50011, N'Chỉ CUSTOMER mới được tạo booking.', 1;
+
+    -- SESSION_CONTEXT bắt buộc: mọi SP nghiệp vụ phải gọi sp_Login trước
+    -- (security contract section Q - Option A: KHÔNG fallback, chống impersonation)
+    DECLARE @ActorId UNIQUEIDENTIFIER = CONVERT(UNIQUEIDENTIFIER, SESSION_CONTEXT(N'UserId'));
+    IF @ActorId IS NULL
+        THROW 50010, N'Phiên chưa đăng nhập. Phải gọi sp_Login trước.', 1;
+    IF @ActorId <> @UserId
+        THROW 50010, N'UserId không khớp với phiên đăng nhập (SESSION_CONTEXT).', 1;
 
     DECLARE @PricePerHour DECIMAL(12,0), @PricePerThreeHours DECIMAL(12,0), @CourtIsActive BIT;
     SELECT @PricePerHour = PricePerHour, @PricePerThreeHours = PricePerThreeHours, @CourtIsActive = IsActive
@@ -106,6 +121,10 @@ BEGIN
     IF CONVERT(TIME(0), @StartTime) < CONVERT(TIME(0), '06:00') OR CONVERT(TIME(0), @EndTime) > CONVERT(TIME(0), '22:00')
         THROW 50020, N'Booking phải nằm trong khung hoạt động 06:00–22:00.', 1;
 
+    -- KNOWN-01 FIX: Booking phải nằm trong CÙNG MỘT NGÀY (ngăn cross-midnight)
+    IF CAST(@StartTime AS DATE) <> CAST(@EndTime AS DATE)
+        THROW 50023, N'Booking phải nằm trong cùng một ngày (không được qua đêm).', 1;
+
     IF @BookingId IS NULL
         SET @BookingId = NEWID();
 
@@ -113,6 +132,21 @@ BEGIN
         BEGIN TRAN;
             -- Khóa hàng Court để serialize theo từng sân (ngăn 2 booking chạy cùng lúc)
             SELECT CourtId FROM dbo.Courts WITH (UPDLOCK, ROWLOCK, HOLDLOCK) WHERE CourtId = @CourtId;
+
+            -- KNOWN-09 FIX (TOCTOU): Đọc LẠI trạng thái sân DƯỚI khóa UPDLOCK.
+            -- Check IsActive/ton tai pre-transaction (dòng trên) không đủ: một
+            -- sp_DeactivateCourt commit ngay giữa check đó và INSERT vẫn hợp lệ.
+            -- Ở đây khóa giống hệt sp_DeactivateCourt (UPDLOCK rowlock) nên không
+            -- thể có deactivate nộp giữa re-read và INSERT → chốt quyết định.
+            DECLARE @CourtIsActive2 BIT;
+            SELECT @CourtIsActive2 = IsActive
+            FROM dbo.Courts WITH (UPDLOCK, ROWLOCK, HOLDLOCK)
+            WHERE CourtId = @CourtId;
+
+            IF @CourtIsActive2 IS NULL
+                THROW 50012, N'Sân không tồn tại.', 1;
+            IF @CourtIsActive2 = 0
+                THROW 50013, N'Sân đang ngừng hoạt động (inactive), không thể đặt.', 1;
 
             -- Overlap chỉ tính với BOOKED (nhiều PENDING trên cùng khung là hợp lệ)
             IF EXISTS
@@ -158,6 +192,13 @@ BEGIN
         THROW 50030, N'Người dùng không tồn tại hoặc đang inactive.', 1;
     IF @Role NOT IN (N'MANAGER', N'COURT_MANAGER')
         THROW 50031, N'Không đủ quyền duyệt booking.', 1;
+
+    -- SESSION_CONTEXT bắt buộc (Option A)
+    DECLARE @ActorId UNIQUEIDENTIFIER = CONVERT(UNIQUEIDENTIFIER, SESSION_CONTEXT(N'UserId'));
+    IF @ActorId IS NULL
+        THROW 50030, N'Phiên chưa đăng nhập. Phải gọi sp_Login trước.', 1;
+    IF @ActorId <> @SessionUserId
+        THROW 50030, N'UserId không khớp với phiên đăng nhập (SESSION_CONTEXT).', 1;
 
     DECLARE @CourtId UNIQUEIDENTIFIER, @CourtOwner UNIQUEIDENTIFIER;
     DECLARE @Status NVARCHAR(20), @StartT DATETIME2(0), @EndT DATETIME2(0);
@@ -230,23 +271,46 @@ BEGIN
     IF @Role NOT IN (N'MANAGER', N'COURT_MANAGER')
         THROW 50040, N'Không đủ quyền từ chối booking.', 1;
 
-    DECLARE @CourtId UNIQUEIDENTIFIER, @CourtOwner UNIQUEIDENTIFIER, @Status NVARCHAR(20);
-    SELECT @CourtId = b.CourtId, @Status = b.Status, @CourtOwner = c.OwnerId
-    FROM dbo.Bookings b INNER JOIN dbo.Courts c ON c.CourtId = b.CourtId
-    WHERE b.BookingId = @BookingId;
+    -- SESSION_CONTEXT bắt buộc (Option A)
+    DECLARE @ActorId UNIQUEIDENTIFIER = CONVERT(UNIQUEIDENTIFIER, SESSION_CONTEXT(N'UserId'));
+    IF @ActorId IS NULL
+        THROW 50040, N'Phiên chưa đăng nhập. Phải gọi sp_Login trước.', 1;
+    IF @ActorId <> @SessionUserId
+        THROW 50040, N'UserId không khớp với phiên đăng nhập (SESSION_CONTEXT).', 1;
 
-    IF @CourtId IS NULL THROW 50041, N'Booking không tồn tại.', 1;
-    IF @Role = N'COURT_MANAGER' AND @CourtOwner <> @SessionUserId
-        THROW 50042, N'Court Manager chỉ thao tác booking thuộc sân của mình.', 1;
-    IF @Status <> N'PENDING'
-        THROW 50043, N'Chỉ từ chối được booking ở trạng thái PENDING.', 1;
+    DECLARE @CourtId UNIQUEIDENTIFIER, @CourtOwner UNIQUEIDENTIFIER, @Status NVARCHAR(20);
 
     BEGIN TRY
         BEGIN TRAN;
+            -- KNOWN-08 FIX + KNOWN-10 FIX: lock ordering nhất quán Court -> Booking.
+            -- 1) Xác định CourtId TRƯỚC (chỉ là locator, không giữ khóa lâu).
+            SELECT @CourtId = b.CourtId
+            FROM dbo.Bookings b
+            WHERE b.BookingId = @BookingId;
+
+            IF @CourtId IS NULL
+                THROW 50041, N'Booking không tồn tại.', 1;
+
+            -- 2) Khóa Court TRƯỚC (điểm tuần tự hóa), rồi mới đọc/khóa Booking.
             SELECT CourtId FROM dbo.Courts WITH (UPDLOCK, ROWLOCK, HOLDLOCK) WHERE CourtId = @CourtId;
 
+            -- 3) Đọc lại state DƯỚI khóa booking (anti-TOCTOU), đồng thời kiểm tra CourtId
+            --    vẫn khớp (revalidate locator sau khi đã khóa).
+            SELECT @CourtId = b.CourtId, @Status = b.Status, @CourtOwner = c.OwnerId
+            FROM dbo.Bookings b WITH (UPDLOCK, ROWLOCK)
+            INNER JOIN dbo.Courts c ON c.CourtId = b.CourtId
+            WHERE b.BookingId = @BookingId;
+
+            IF @CourtId IS NULL
+                THROW 50041, N'Booking không tồn tại.', 1;
+            IF @Role = N'COURT_MANAGER' AND @CourtOwner <> @SessionUserId
+                THROW 50042, N'Court Manager chỉ thao tác booking thuộc sân của mình.', 1;
+            IF @Status <> N'PENDING'
+                THROW 50043, N'Chỉ từ chối được booking ở trạng thái PENDING.', 1;
+
             UPDATE dbo.Bookings SET Status = N'REJECTED', UpdatedAt = SYSDATETIME() WHERE BookingId = @BookingId;
-            IF @@ROWCOUNT <> 1 THROW 50043, N'Chỉ từ chối được booking ở trạng thái PENDING.', 1;
+            IF @@ROWCOUNT <> 1
+                THROW 50043, N'Chỉ từ chối được booking ở trạng thái PENDING.', 1;
         COMMIT;
     END TRY
     BEGIN CATCH
@@ -274,38 +338,64 @@ BEGIN
     SELECT @Role = Role FROM dbo.Users WHERE UserId = @SessionUserId AND IsActive = 1;
     IF @Role IS NULL THROW 50050, N'Người dùng không tồn tại hoặc đang inactive.', 1;
 
+    -- SESSION_CONTEXT bắt buộc (Option A)
+    DECLARE @ActorId UNIQUEIDENTIFIER = CONVERT(UNIQUEIDENTIFIER, SESSION_CONTEXT(N'UserId'));
+    IF @ActorId IS NULL
+        THROW 50050, N'Phiên chưa đăng nhập. Phải gọi sp_Login trước.', 1;
+    IF @ActorId <> @SessionUserId
+        THROW 50050, N'UserId không khớp với phiên đăng nhập (SESSION_CONTEXT).', 1;
+
     DECLARE @BookingUserId UNIQUEIDENTIFIER, @CourtOwner UNIQUEIDENTIFIER;
-    DECLARE @Status NVARCHAR(20), @StartT DATETIME2(0);
-
-    SELECT @BookingUserId = b.UserId, @Status = b.Status, @StartT = b.StartTime, @CourtOwner = c.OwnerId
-    FROM dbo.Bookings b INNER JOIN dbo.Courts c ON c.CourtId = b.CourtId
-    WHERE b.BookingId = @BookingId;
-
-    IF @BookingUserId IS NULL THROW 50051, N'Booking không tồn tại.', 1;
-    IF @Status IN (N'COMPLETED', N'REJECTED')
-        THROW 50052, N'Không thể hủy booking đã COMPLETED hoặc REJECTED.', 1;
-    IF @Status = N'CANCELLED'
-        THROW 50053, N'Booking này đã bị hủy trước đó.', 1;
-
-    IF @Role = N'CUSTOMER'
-    BEGIN
-        IF @BookingUserId <> @SessionUserId
-            THROW 50054, N'Customer chỉ được hủy booking của chính mình.', 1;
-        IF @Status = N'BOOKED' AND @StartT < DATEADD(HOUR, 3, SYSDATETIME())
-            THROW 50055, N'BOOKED chỉ được Customer tự hủy khi còn tối thiểu 3 giờ trước giờ bắt đầu.', 1;
-    END
-    ELSE IF @Role = N'COURT_MANAGER'
-    BEGIN
-        IF @CourtOwner <> @SessionUserId
-            THROW 50056, N'Court Manager chỉ hủy booking thuộc sân của mình.', 1;
-    END
-    ELSE IF @Role <> N'MANAGER'
-        THROW 50057, N'Không đủ quyền hủy booking.', 1;
+    DECLARE @Status NVARCHAR(20), @StartT DATETIME2(0), @CourtId UNIQUEIDENTIFIER;
 
     BEGIN TRY
         BEGIN TRAN;
-            UPDATE dbo.Bookings SET Status = N'CANCELLED', UpdatedAt = SYSDATETIME() WHERE BookingId = @BookingId;
-            IF @@ROWCOUNT <> 1 THROW 50058, N'Hủy booking thất bại.', 1;
+            -- KNOWN-02 FIX + KNOWN-10 FIX: lock ordering nhất quán Court -> Booking.
+            -- 1) Xác định CourtId TRƯỚC (locator, không giữ khóa).
+            SELECT @CourtId = CourtId
+            FROM dbo.Bookings
+            WHERE BookingId = @BookingId;
+
+            IF @CourtId IS NULL THROW 50051, N'Booking không tồn tại.', 1;
+
+            -- 2) Khóa Court TRƯỚC (điểm tuần tự hóa).
+            SELECT CourtId FROM dbo.Courts WITH (UPDLOCK, ROWLOCK, HOLDLOCK) WHERE CourtId = @CourtId;
+
+            -- 3) Đọc lại state DƯỚI khóa booking (anti-TOCTOU) + revalidate CourtId.
+            --    Tất cả check (ownership, status, thời gian 3h) dựa trên state mới nhất.
+            SELECT @BookingUserId = b.UserId, @Status = b.Status, @StartT = b.StartTime,
+                   @CourtId = b.CourtId, @CourtOwner = c.OwnerId
+            FROM dbo.Bookings b WITH (UPDLOCK, ROWLOCK, HOLDLOCK)
+            INNER JOIN dbo.Courts c ON c.CourtId = b.CourtId
+            WHERE b.BookingId = @BookingId;
+
+            IF @BookingUserId IS NULL THROW 50051, N'Booking không tồn tại.', 1;
+            IF @Status IN (N'COMPLETED', N'REJECTED')
+                THROW 50052, N'Không thể hủy booking đã COMPLETED hoặc REJECTED.', 1;
+            IF @Status = N'CANCELLED'
+                THROW 50053, N'Booking này đã bị hủy trước đó.', 1;
+
+            IF @Role = N'CUSTOMER'
+            BEGIN
+                IF @BookingUserId <> @SessionUserId
+                    THROW 50054, N'Customer chỉ được hủy booking của chính mình.', 1;
+                -- KNOWN-02 FIX: re-check thời gian dựa trên @Status đã được lock ở trên
+                IF @Status = N'BOOKED' AND @StartT < DATEADD(HOUR, 3, SYSDATETIME())
+                    THROW 50055, N'BOOKED chỉ được Customer tự hủy khi còn tối thiểu 3 giờ trước giờ bắt đầu.', 1;
+            END
+            ELSE IF @Role = N'COURT_MANAGER'
+            BEGIN
+                IF @CourtOwner <> @SessionUserId
+                    THROW 50056, N'Court Manager chỉ hủy booking thuộc sân của mình.', 1;
+            END
+            ELSE IF @Role <> N'MANAGER'
+                THROW 50057, N'Không đủ quyền hủy booking.', 1;
+
+            UPDATE dbo.Bookings
+            SET Status = N'CANCELLED', UpdatedAt = SYSDATETIME()
+            WHERE BookingId = @BookingId AND Status = @Status;
+            IF @@ROWCOUNT <> 1
+                THROW 50058, N'Hủy booking thất bại: trạng thái đã thay đổi đồng thời.', 1;
         COMMIT;
     END TRY
     BEGIN CATCH
@@ -334,21 +424,39 @@ BEGIN
     IF @Role NOT IN (N'MANAGER', N'COURT_MANAGER')
         THROW 50060, N'Không đủ quyền hoàn thành booking.', 1;
 
-    DECLARE @CourtId UNIQUEIDENTIFIER, @CourtOwner UNIQUEIDENTIFIER, @Status NVARCHAR(20);
-    SELECT @CourtId = b.CourtId, @Status = b.Status, @CourtOwner = c.OwnerId
-    FROM dbo.Bookings b INNER JOIN dbo.Courts c ON c.CourtId = b.CourtId
-    WHERE b.BookingId = @BookingId;
+    -- SESSION_CONTEXT bắt buộc (Option A)
+    DECLARE @ActorId UNIQUEIDENTIFIER = CONVERT(UNIQUEIDENTIFIER, SESSION_CONTEXT(N'UserId'));
+    IF @ActorId IS NULL
+        THROW 50060, N'Phiên chưa đăng nhập. Phải gọi sp_Login trước.', 1;
+    IF @ActorId <> @SessionUserId
+        THROW 50060, N'UserId không khớp với phiên đăng nhập (SESSION_CONTEXT).', 1;
 
-    IF @CourtId IS NULL THROW 50061, N'Booking không tồn tại.', 1;
-    IF @Status <> N'BOOKED'
-        THROW 50062, N'Chỉ hoàn thành được booking ở trạng thái BOOKED.', 1;
-    IF @Role = N'COURT_MANAGER' AND @CourtOwner <> @SessionUserId
-        THROW 50063, N'Court Manager chỉ thao tác booking thuộc sân của mình.', 1;
+    DECLARE @CourtId UNIQUEIDENTIFIER, @CourtOwner UNIQUEIDENTIFIER, @Status NVARCHAR(20);
 
     BEGIN TRY
         BEGIN TRAN;
-            UPDATE dbo.Bookings SET Status = N'COMPLETED', UpdatedAt = SYSDATETIME() WHERE BookingId = @BookingId;
-            IF @@ROWCOUNT <> 1 THROW 50064, N'Hoàn thành booking thất bại.', 1;
+            -- KNOWN-08 FIX + KNOWN-10 FIX: lock ordering nhất quán Court -> Booking.
+            SELECT @CourtId = CourtId
+            FROM dbo.Bookings
+            WHERE BookingId = @BookingId;
+
+            IF @CourtId IS NULL THROW 50061, N'Booking không tồn tại.', 1;
+
+            SELECT CourtId FROM dbo.Courts WITH (UPDLOCK, ROWLOCK, HOLDLOCK) WHERE CourtId = @CourtId;
+
+            SELECT @CourtId = b.CourtId, @Status = b.Status, @CourtOwner = c.OwnerId
+            FROM dbo.Bookings b WITH (UPDLOCK, ROWLOCK, HOLDLOCK)
+            INNER JOIN dbo.Courts c ON c.CourtId = b.CourtId
+            WHERE b.BookingId = @BookingId;
+
+            IF @CourtId IS NULL THROW 50061, N'Booking không tồn tại.', 1;
+            IF @Status <> N'BOOKED'
+                THROW 50062, N'Chỉ hoàn thành được booking ở trạng thái BOOKED.', 1;
+            IF @Role = N'COURT_MANAGER' AND @CourtOwner <> @SessionUserId
+                THROW 50063, N'Court Manager chỉ thao tác booking thuộc sân của mình.', 1;
+
+            UPDATE dbo.Bookings SET Status = N'COMPLETED', UpdatedAt = SYSDATETIME() WHERE BookingId = @BookingId AND Status = @Status;
+            IF @@ROWCOUNT <> 1 THROW 50064, N'Hoàn thành booking thất bại: trạng thái đã thay đổi đồng thời.', 1;
         COMMIT;
     END TRY
     BEGIN CATCH
@@ -384,6 +492,13 @@ BEGIN
     SELECT @Role = Role FROM dbo.Users WHERE UserId = @SessionUserId AND IsActive = 1;
     IF @Role NOT IN (N'MANAGER', N'COURT_MANAGER')
         THROW 50070, N'Không đủ quyền tạo sân.', 1;
+
+    -- SESSION_CONTEXT bắt buộc (Option A)
+    DECLARE @ActorId UNIQUEIDENTIFIER = CONVERT(UNIQUEIDENTIFIER, SESSION_CONTEXT(N'UserId'));
+    IF @ActorId IS NULL
+        THROW 50070, N'Phiên chưa đăng nhập. Phải gọi sp_Login trước.', 1;
+    IF @ActorId <> @SessionUserId
+        THROW 50070, N'UserId không khớp với phiên đăng nhập (SESSION_CONTEXT).', 1;
 
     IF @OwnerId IS NULL
         SET @OwnerId = @SessionUserId;
@@ -430,20 +545,39 @@ BEGIN
     IF @Role NOT IN (N'MANAGER', N'COURT_MANAGER')
         THROW 50080, N'Không đủ quyền sửa sân.', 1;
 
-    DECLARE @OwnerId UNIQUEIDENTIFIER;
-    SELECT @OwnerId = OwnerId FROM dbo.Courts WHERE CourtId = @CourtId;
-    IF @OwnerId IS NULL THROW 50081, N'Sân không tồn tại.', 1;
-    IF @Role = N'COURT_MANAGER' AND @OwnerId <> @SessionUserId
-        THROW 50082, N'Court Manager chỉ được sửa sân thuộc quyền mình.', 1;
+    -- SESSION_CONTEXT bắt buộc (Option A)
+    DECLARE @ActorId UNIQUEIDENTIFIER = CONVERT(UNIQUEIDENTIFIER, SESSION_CONTEXT(N'UserId'));
+    IF @ActorId IS NULL
+        THROW 50080, N'Phiên chưa đăng nhập. Phải gọi sp_Login trước.', 1;
+    IF @ActorId <> @SessionUserId
+        THROW 50080, N'UserId không khớp với phiên đăng nhập (SESSION_CONTEXT).', 1;
 
+    DECLARE @OwnerId UNIQUEIDENTIFIER;
     IF @PricePerHour <= 0 OR @PricePerThreeHours <= 0
         THROW 50083, N'Giá sân phải lớn hơn 0.', 1;
 
-    UPDATE dbo.Courts
-    SET CourtName = @CourtName, Address = @Address, SurfaceType = @SurfaceType,
-        SizeType = @SizeType, PricePerHour = @PricePerHour, PricePerThreeHours = @PricePerThreeHours,
-        ImageUrl = @ImageUrl, UpdatedAt = SYSDATETIME()
-    WHERE CourtId = @CourtId;
+    BEGIN TRY
+        BEGIN TRAN;
+            -- KNOWN-08 FIX: đọc OwnerId DƯỚI khóa UPDLOCK trong transaction để tránh TOCTOU
+            SELECT @OwnerId = OwnerId
+            FROM dbo.Courts WITH (UPDLOCK, ROWLOCK)
+            WHERE CourtId = @CourtId;
+
+            IF @OwnerId IS NULL THROW 50081, N'Sân không tồn tại.', 1;
+            IF @Role = N'COURT_MANAGER' AND @OwnerId <> @SessionUserId
+                THROW 50082, N'Court Manager chỉ được sửa sân thuộc quyền mình.', 1;
+
+            UPDATE dbo.Courts
+            SET CourtName = @CourtName, Address = @Address, SurfaceType = @SurfaceType,
+                SizeType = @SizeType, PricePerHour = @PricePerHour, PricePerThreeHours = @PricePerThreeHours,
+                ImageUrl = @ImageUrl, UpdatedAt = SYSDATETIME()
+            WHERE CourtId = @CourtId;
+        COMMIT;
+    END TRY
+    BEGIN CATCH
+        IF XACT_STATE() <> 0 ROLLBACK;
+        THROW;
+    END CATCH;
 END
 GO
 
@@ -466,16 +600,35 @@ BEGIN
     IF @Role NOT IN (N'MANAGER', N'COURT_MANAGER')
         THROW 50090, N'Không đủ quyền ngừng hoạt động sân.', 1;
 
-    DECLARE @OwnerId UNIQUEIDENTIFIER;
-    SELECT @OwnerId = OwnerId FROM dbo.Courts WHERE CourtId = @CourtId;
-    IF @OwnerId IS NULL THROW 50091, N'Sân không tồn tại.', 1;
-    IF @Role = N'COURT_MANAGER' AND @OwnerId <> @SessionUserId
-        THROW 50092, N'Court Manager chỉ thao tác sân thuộc quyền mình.', 1;
+    -- SESSION_CONTEXT bắt buộc (Option A)
+    DECLARE @ActorId UNIQUEIDENTIFIER = CONVERT(UNIQUEIDENTIFIER, SESSION_CONTEXT(N'UserId'));
+    IF @ActorId IS NULL
+        THROW 50090, N'Phiên chưa đăng nhập. Phải gọi sp_Login trước.', 1;
+    IF @ActorId <> @SessionUserId
+        THROW 50090, N'UserId không khớp với phiên đăng nhập (SESSION_CONTEXT).', 1;
 
-    UPDATE dbo.Courts SET IsActive = 0, UpdatedAt = SYSDATETIME() WHERE CourtId = @CourtId;
+    DECLARE @OwnerId UNIQUEIDENTIFIER;
+
+    BEGIN TRY
+        BEGIN TRAN;
+            -- KNOWN-08 FIX: đọc OwnerId DƯỚI khóa UPDLOCK trong transaction để tránh TOCTOU
+            SELECT @OwnerId = OwnerId
+            FROM dbo.Courts WITH (UPDLOCK, ROWLOCK)
+            WHERE CourtId = @CourtId;
+
+            IF @OwnerId IS NULL THROW 50091, N'Sân không tồn tại.', 1;
+            IF @Role = N'COURT_MANAGER' AND @OwnerId <> @SessionUserId
+                THROW 50092, N'Court Manager chỉ thao tác sân thuộc quyền mình.', 1;
+
+            UPDATE dbo.Courts SET IsActive = 0, UpdatedAt = SYSDATETIME() WHERE CourtId = @CourtId;
+        COMMIT;
+    END TRY
+    BEGIN CATCH
+        IF XACT_STATE() <> 0 ROLLBACK;
+        THROW;
+    END CATCH;
 END
 GO
-
 -- ============================================================
 -- 10. sp_GetAvailableCourts: tìm sân phù hợp theo khoảng thời gian
 -- ============================================================
@@ -485,6 +638,7 @@ CREATE PROCEDURE dbo.sp_GetAvailableCourts
     @StartTime DATETIME2(0),
     @EndTime   DATETIME2(0),
     @CourtId   UNIQUEIDENTIFIER = NULL
+WITH EXECUTE AS OWNER
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -507,41 +661,60 @@ BEGIN
 END
 GO
 
--- ============================================================
 -- 11. sp_GetMyBookings: lịch sử booking của Customer hiện tại
+--     KNOWN-06 FIX: dùng SESSION_CONTEXT('UserId') LÀM NGUỒN DUY NHẤT (Option A).
+--     Không fallback sang @UserId - ngăn impersonation khi không có phiên đăng nhập.
 -- ============================================================
 IF OBJECT_ID(N'dbo.sp_GetMyBookings', N'P') IS NOT NULL DROP PROCEDURE dbo.sp_GetMyBookings;
 GO
 CREATE PROCEDURE dbo.sp_GetMyBookings
-    @UserId UNIQUEIDENTIFIER
+    @UserId UNIQUEIDENTIFIER = NULL
+WITH EXECUTE AS OWNER
 AS
 BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
 
-    SELECT BookingId, CourtId, CourtName, CourtAddress, StartTime, EndTime, Status, TotalCost, CreatedAt
-    FROM dbo.vw_BookingHistory
-    WHERE UserId = @UserId
-    ORDER BY StartTime DESC;
+    -- Actor từ SESSION_CONTEXT (do sp_Login thiết lập) - BẮT BUỘC
+    DECLARE @ActorId UNIQUEIDENTIFIER = CONVERT(UNIQUEIDENTIFIER, SESSION_CONTEXT(N'UserId'));
+    IF @ActorId IS NULL
+        THROW 51054, N'Chưa đăng nhập. Phải gọi sp_Login trước (SESSION_CONTEXT rỗng).', 1;
+    -- @UserId nếu có truyền vào phải khớp actor (chống impersonation)
+    IF @UserId IS NOT NULL AND @UserId <> @ActorId
+        THROW 51054, N'UserId không khớp với phiên đăng nhập.', 1;
+
+    SELECT b.BookingId, b.CourtId, c.CourtName, c.Address AS CourtAddress, b.StartTime, b.EndTime, b.Status, b.TotalCost, b.CreatedAt
+    FROM dbo.Bookings b
+    INNER JOIN dbo.Courts c ON c.CourtId = b.CourtId
+    WHERE b.UserId = @ActorId
+    ORDER BY b.StartTime DESC;
 END
 GO
 
--- ============================================================
 -- 12. sp_GetNotifications: lấy notification theo User
+--     KNOWN-06 FIX: dùng SESSION_CONTEXT('UserId') làm nguồn duy nhất (Option A).
 -- ============================================================
 IF OBJECT_ID(N'dbo.sp_GetNotifications', N'P') IS NOT NULL DROP PROCEDURE dbo.sp_GetNotifications;
 GO
 CREATE PROCEDURE dbo.sp_GetNotifications
-    @UserId     UNIQUEIDENTIFIER,
+    @UserId     UNIQUEIDENTIFIER = NULL,
     @UnreadOnly BIT = 0
+WITH EXECUTE AS OWNER
 AS
 BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
 
+    -- Actor từ SESSION_CONTEXT - BẮT BUỘC
+    DECLARE @ActorId UNIQUEIDENTIFIER = CONVERT(UNIQUEIDENTIFIER, SESSION_CONTEXT(N'UserId'));
+    IF @ActorId IS NULL
+        THROW 51060, N'Chưa đăng nhập. Phải gọi sp_Login trước (SESSION_CONTEXT rỗng).', 1;
+    IF @UserId IS NOT NULL AND @UserId <> @ActorId
+        THROW 51060, N'UserId không khớp với phiên đăng nhập.', 1;
+
     SELECT NotificationId, UserId, BookingId, Message, IsRead, CreatedAt
     FROM dbo.Notifications
-    WHERE UserId = @UserId
+    WHERE UserId = @ActorId
       AND (@UnreadOnly = 0 OR IsRead = 0)
     ORDER BY CreatedAt DESC;
 END
@@ -553,13 +726,21 @@ GO
 IF OBJECT_ID(N'dbo.sp_MarkNotificationRead', N'P') IS NOT NULL DROP PROCEDURE dbo.sp_MarkNotificationRead;
 GO
 CREATE PROCEDURE dbo.sp_MarkNotificationRead
-    @SessionUserId  UNIQUEIDENTIFIER,
+    @SessionUserId  UNIQUEIDENTIFIER = NULL,
     @NotificationId UNIQUEIDENTIFIER
 WITH EXECUTE AS OWNER
 AS
 BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
+
+    -- SESSION_CONTEXT validation (security contract section Q) - Option A: bắt buộc
+    DECLARE @ActorId UNIQUEIDENTIFIER = CONVERT(UNIQUEIDENTIFIER, SESSION_CONTEXT(N'UserId'));
+    IF @ActorId IS NULL
+        THROW 51061, N'Phiên đăng nhập chưa được thiết lập. Phải gọi sp_Login trước.', 1;
+    IF @SessionUserId IS NOT NULL AND @ActorId <> @SessionUserId
+        THROW 51061, N'UserId không khớp với phiên đăng nhập.', 1;
+    SET @SessionUserId = @ActorId;
 
     UPDATE dbo.Notifications
     SET IsRead = 1
@@ -577,12 +758,20 @@ GO
 IF OBJECT_ID(N'dbo.sp_GetDashboard', N'P') IS NOT NULL DROP PROCEDURE dbo.sp_GetDashboard;
 GO
 CREATE PROCEDURE dbo.sp_GetDashboard
-    @SessionUserId UNIQUEIDENTIFIER
+    @SessionUserId UNIQUEIDENTIFIER = NULL
 WITH EXECUTE AS OWNER
 AS
 BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
+
+    -- SESSION_CONTEXT validation (security contract section Q) - Option A: bắt buộc
+    DECLARE @ActorId UNIQUEIDENTIFIER = CONVERT(UNIQUEIDENTIFIER, SESSION_CONTEXT(N'UserId'));
+    IF @ActorId IS NULL
+        THROW 50110, N'Phiên đăng nhập chưa được thiết lập. Phải gọi sp_Login trước.', 1;
+    IF @SessionUserId IS NOT NULL AND @ActorId <> @SessionUserId
+        THROW 50110, N'UserId không khớp với phiên đăng nhập.', 1;
+    SET @SessionUserId = @ActorId;
 
     DECLARE @Role NVARCHAR(20);
     SELECT @Role = Role FROM dbo.Users WHERE UserId = @SessionUserId AND IsActive = 1;

@@ -1,0 +1,12 @@
+Changed database context to 'BadmintonCourtManagement'.
+ ==== PHASE UNSAFE ====  Baseline PricePerHour C5 = 100.000
+ Đọc PricePerHour (stale): 100000
+ Đã ghi từ stale 100.000 -> 150.000 (ghi đè B).
+ KẾT LUẬN UNSAFE: Final = 150000
+ >>> LOST UPDATE xảy ra (B mất +20.000) - đúng kịch bản unsafe.
+ ==== PHASE FIXED ====  Baseline reset 100.000
+ FIXED: Đọc (giữ UPDLOCK) = 100000, chờ B block, giữ khóa 6 giây...
+ FIXED: A commit 150.000 → B đang block sẽ thoát và đọc số mới.
+ KẾT LUẬN FIXED: Final = 170000
+ >>> ASSERTION PASS: 170.000 → KHÔNG lost update (A 150.000 + B 20.000 nối tiếp).
+ Cleanup: PricePerHour C5 đã reset về 100.000.

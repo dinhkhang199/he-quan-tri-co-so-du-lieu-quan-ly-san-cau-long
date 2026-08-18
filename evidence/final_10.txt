@@ -1,0 +1,35 @@
+Changed database context to 'BadmintonCourtManagement'.
+Changed database context to 'BadmintonCourtManagement'.
+
+=================================================================
+ READ COMMITTED - PHANTOM DEMO
+  >>> Trong lúc A đang chờ "WAITFOR <<<", mở SSMS #2 và chạy:
+      +----------------------------------------------
+      |  USE BadmintonCourtManagement;               |
+      |  INSERT INTO dbo.Bookings                    |
+      |    (UserId, CourtId, StartTime, EndTime,     |
+      |     Status, TotalCost)                       |
+      |  SELECT 'A1000001-0000-0000-0000-000000000004' |
+      |       , 'C1000001-0000-0000-0000-000000000006' |
+      |       , DATETIMEFROMPARTS(YEAR(DATEADD(DAY,1,CAST(GETDATE() AS DATE))),MONTH(DATEADD(DAY,1,CAST(GETDATE() AS DATE))),DAY(DATEADD(DAY,1,CAST(GETDATE() AS DATE))),6,0,0,0)
+      |       , DATETIMEFROMPARTS(YEAR(DATEADD(DAY,1,CAST(GETDATE() AS DATE))),MONTH(DATEADD(DAY,1,CAST(GETDATE() AS DATE))),DAY(DATEADD(DAY,1,CAST(GETDATE() AS DATE))),7,0,0,0)
+      |       , N'PENDING', 100000);               |
+      +----------------------------------------------
+=================================================================
+ Lần đọc 1: 0 booking (trước khi B insert)
+ >>> ĐANG CHỜ 8 giây: chạy insert "WINDOW B" ở cửa sổ #2 rồi quay lại <<<
+ Lần đọc 2: 0 booking (sau khi B commit)
+ Chưa thấy phantom - nhớ chạy insert ở cửa sổ #2 trong lúc WAITFOR.
+
+=================================================================
+ SERIALIZABLE - PHANTOM KHÔNG XẢY RA
+  >>> Trong lúc A đang chờ, mở SSMS #2 và chạy cùng câu INSERT
+      (giống WINDOW B nhưng thay UserId bởi một CUSTOMER khác).
+      Câu INSERT của cửa sổ #2 sẽ BỊ TREO (blocked) tới khi A kết thúc.
+=================================================================
+ Lần đọc 1: 0 booking
+ >>> ĐANG CHỜ 10 giây: chạy insert ở cửa sổ #2 (sẽ bị blocked) rồi quay lại <<<
+ Lần đọc 2: 0 booking (ổn định vì B chưa ghi được)
+ >>> KẾT LUẬN: SERIALIZABLE ngăn phantom (predicate ổn định; insert đối thủ bị range lock chặn tới khi A kết thúc).
+
+--- Hết 10_tests_transactions.sql. Xem thêm 11/12 (concurrency), 13/14 (deadlock), 15 (backup/restore). ---

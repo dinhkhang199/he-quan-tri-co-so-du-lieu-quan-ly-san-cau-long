@@ -1,0 +1,201 @@
+Changed database context to 'BadmintonCourtManagement'.
+UserId                               Username                                           Role                 IsActive LastLogin
+------------------------------------ -------------------------------------------------- -------------------- -------- --------------------------------------
+A1000001-0000-0000-0000-000000000005 customer2                                          CUSTOMER                    1                    2026-08-18 12:32:53
+CourtId
+------------------------------------
+C1000001-0000-0000-0000-000000000001
+UserId                               Username                                           Role                 IsActive LastLogin
+------------------------------------ -------------------------------------------------- -------------------- -------- --------------------------------------
+A1000001-0000-0000-0000-000000000004 customer1                                          CUSTOMER                    1                    2026-08-18 12:32:53
+CourtId
+------------------------------------
+C1000001-0000-0000-0000-000000000001
+UserId                               Username                                           Role                 IsActive LastLogin
+------------------------------------ -------------------------------------------------- -------------------- -------- --------------------------------------
+A1000001-0000-0000-0000-000000000001 manager                                            MANAGER                     1                    2026-08-18 12:32:53
+CourtId
+------------------------------------
+C1000001-0000-0000-0000-000000000001
+UserId                               Username                                           Role                 IsActive LastLogin
+------------------------------------ -------------------------------------------------- -------------------- -------- --------------------------------------
+A1000001-0000-0000-0000-000000000005 customer2                                          CUSTOMER                    1                    2026-08-18 12:32:53
+CourtId
+------------------------------------
+C1000001-0000-0000-0000-000000000001
+UserId                               Username                                           Role                 IsActive LastLogin
+------------------------------------ -------------------------------------------------- -------------------- -------- --------------------------------------
+A1000001-0000-0000-0000-000000000005 customer2                                          CUSTOMER                    1                    2026-08-18 12:32:53
+CourtId
+------------------------------------
+C1000001-0000-0000-0000-000000000001
+UserId                               Username                                           Role                 IsActive LastLogin
+------------------------------------ -------------------------------------------------- -------------------- -------- --------------------------------------
+A1000001-0000-0000-0000-000000000001 manager                                            MANAGER                     1                    2026-08-18 12:32:53
+CourtId
+------------------------------------
+C1000001-0000-0000-0000-000000000001
+UserId                               Username                                           Role                 IsActive LastLogin
+------------------------------------ -------------------------------------------------- -------------------- -------- --------------------------------------
+A1000001-0000-0000-0000-000000000004 customer1                                          CUSTOMER                    1                    2026-08-18 12:32:53
+CourtId
+------------------------------------
+C1000001-0000-0000-0000-000000000001
+UserId                               Username                                           Role                 IsActive LastLogin
+------------------------------------ -------------------------------------------------- -------------------- -------- --------------------------------------
+A1000001-0000-0000-0000-000000000005 customer2                                          CUSTOMER                    1                    2026-08-18 12:32:53
+CourtId
+------------------------------------
+C1000001-0000-0000-0000-000000000001
+UserId                               Username                                           Role                 IsActive LastLogin
+------------------------------------ -------------------------------------------------- -------------------- -------- --------------------------------------
+A1000001-0000-0000-0000-000000000001 manager                                            MANAGER                     1                    2026-08-18 12:32:53
+CourtId
+------------------------------------
+C1000001-0000-0000-0000-000000000001
+CourtId
+------------------------------------
+C1000001-0000-0000-0000-000000000001
+UserId                               Username                                           Role                 IsActive LastLogin
+------------------------------------ -------------------------------------------------- -------------------- -------- --------------------------------------
+A1000001-0000-0000-0000-000000000005 customer2                                          CUSTOMER                    1                    2026-08-18 12:32:53
+CourtId
+------------------------------------
+C1000001-0000-0000-0000-000000000002
+UserId                               Username                                           Role                 IsActive LastLogin
+------------------------------------ -------------------------------------------------- -------------------- -------- --------------------------------------
+A1000001-0000-0000-0000-000000000002 courtmanager1                                      COURT_MANAGER               1                    2026-08-18 12:32:53
+CourtId
+------------------------------------
+C1000001-0000-0000-0000-000000000002
+UserId                               Username                                           Role                 IsActive LastLogin
+------------------------------------ -------------------------------------------------- -------------------- -------- --------------------------------------
+A1000001-0000-0000-0000-000000000001 manager                                            MANAGER                     1                    2026-08-18 12:32:53
+CourtId
+------------------------------------
+C1000001-0000-0000-0000-000000000002
+UserId                               Username                                           Role                 IsActive LastLogin
+------------------------------------ -------------------------------------------------- -------------------- -------- --------------------------------------
+A1000001-0000-0000-0000-000000000006 customer3                                          CUSTOMER                    1                    2026-08-18 12:32:53
+CourtId
+------------------------------------
+C1000001-0000-0000-0000-000000000003
+CourtId
+------------------------------------
+C1000001-0000-0000-0000-000000000003
+UserId                               Username                                           Role                 IsActive LastLogin
+------------------------------------ -------------------------------------------------- -------------------- -------- --------------------------------------
+A1000001-0000-0000-0000-000000000004 customer1                                          CUSTOMER                    1                    2026-08-18 12:32:53
+CourtId
+------------------------------------
+C1000001-0000-0000-0000-000000000003
+UserId                               Username                                           Role                 IsActive LastLogin
+------------------------------------ -------------------------------------------------- -------------------- -------- --------------------------------------
+A1000001-0000-0000-0000-000000000006 customer3                                          CUSTOMER                    1                    2026-08-18 12:32:53
+CourtId
+------------------------------------
+C1000001-0000-0000-0000-000000000003
+UserId                               Username                                           Role                 IsActive LastLogin
+------------------------------------ -------------------------------------------------- -------------------- -------- --------------------------------------
+A1000001-0000-0000-0000-000000000004 customer1                                          CUSTOMER                    1                    2026-08-18 12:32:53
+CourtId
+------------------------------------
+C1000001-0000-0000-0000-000000000006
+UserId                               Username                                           Role                 IsActive LastLogin
+------------------------------------ -------------------------------------------------- -------------------- -------- --------------------------------------
+A1000001-0000-0000-0000-000000000004 customer1                                          CUSTOMER                    1                    2026-08-18 12:32:53
+CourtId
+------------------------------------
+C1000001-0000-0000-0000-000000000004
+UserId                               Username                                           Role                 IsActive LastLogin
+------------------------------------ -------------------------------------------------- -------------------- -------- --------------------------------------
+A1000001-0000-0000-0000-000000000005 customer2                                          CUSTOMER                    1                    2026-08-18 12:32:53
+CourtId
+------------------------------------
+C1000001-0000-0000-0000-000000000004
+UserId                               Username                                           Role                 IsActive LastLogin
+------------------------------------ -------------------------------------------------- -------------------- -------- --------------------------------------
+A1000001-0000-0000-0000-000000000003 courtmanager2                                      COURT_MANAGER               1                    2026-08-18 12:32:53
+CourtId
+------------------------------------
+C1000001-0000-0000-0000-000000000004
+UserId                               Username                                           Role                 IsActive LastLogin
+------------------------------------ -------------------------------------------------- -------------------- -------- --------------------------------------
+A1000001-0000-0000-0000-000000000004 customer1                                          CUSTOMER                    1                    2026-08-18 12:32:53
+CourtId
+------------------------------------
+C1000001-0000-0000-0000-000000000005
+
+-----------
+UserId                               Username                                           Role                 IsActive LastLogin
+------------------------------------ -------------------------------------------------- -------------------- -------- --------------------------------------
+A1000001-0000-0000-0000-000000000004 customer1                                          CUSTOMER                    1                    2026-08-18 12:32:53
+UserId                               Username                                           Role                 IsActive LastLogin
+------------------------------------ -------------------------------------------------- -------------------- -------- --------------------------------------
+A1000001-0000-0000-0000-000000000004 customer1                                          CUSTOMER                    1                    2026-08-18 12:32:53
+UserId                               Username                                           Role                 IsActive LastLogin
+------------------------------------ -------------------------------------------------- -------------------- -------- --------------------------------------
+A1000001-0000-0000-0000-000000000002 courtmanager1                                      COURT_MANAGER               1                    2026-08-18 12:32:53
+UserId                               Username                                           Role                 IsActive LastLogin
+------------------------------------ -------------------------------------------------- -------------------- -------- --------------------------------------
+A1000001-0000-0000-0000-000000000004 customer1                                          CUSTOMER                    1                    2026-08-18 12:32:53
+CourtId
+------------------------------------
+C1000001-0000-0000-0000-000000000003
+UserId                               Username                                           Role                 IsActive LastLogin
+------------------------------------ -------------------------------------------------- -------------------- -------- --------------------------------------
+A1000001-0000-0000-0000-000000000001 manager                                            MANAGER                     1                    2026-08-18 12:32:53
+Total       Passed      Failed
+----------- ----------- -----------
+         47          47           0
+id                   name                                                                                                                                                                                                     Result note
+-------------------- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- ------ --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+DB-01                Create DB tá»« rá»—ng (5 báº£ng l?µi)                                                                                                                                                                    PASS   DB tá»“n táº¡i
+DB-01b               Äá»§ 5 báº£ng l?µi                                                                                                                                                                                      PASS   Users/Courts/Bookings/ActivityLogs/Notifications
+DB-02                Duplicate username/phone bá»‹ UNIQUE cháº·n                                                                                                                                                              PASS   Lá»—i 2627 UNIQUE constraint
+DB-02p               Duplicate phone bá»‹ UNIQUE cháº·n                                                                                                                                                                       PASS   Lá»—i 2627 UNIQUE constraint
+DB-03                Gi?¡ <= 0 bá»‹ CHECK cháº·n                                                                                                                                                                              PASS   Lá»—i 547 CHECK constraint
+DB-04                Start >= End bá»‹ CHECK cháº·n                                                                                                                                                                           PASS   Lá»—i 547 CHECK constraint
+DB-05                Status invalid bá»‹ CHECK cháº·n                                                                                                                                                                         PASS   Lá»—i 547 CHECK constraint
+DB-05r               Role invalid bá»‹ CHECK cháº·n                                                                                                                                                                           PASS   Lá»—i 547 CHECK constraint
+FN-01                Cost < 3h = giá» láº» x PricePerHour                                                                                                                                                                    PASS   1h = 100.000
+FN-02                Cost Ä‘?ºng 3h = PricePerThreeHours                                                                                                                                                                      PASS   3h = 270.000
+FN-03                Cost > 3h = block 3h + giá» láº»                                                                                                                                                                        PASS   3,5h = 270.000 + 50.000 = 320.000
+FN-04                Boundary: End A = Start B â†’ available                                                                                                                                                                  PASS   07-08 & 08-09 kh?´ng overlap
+FN-04b               Overlap tháº­t â†’ kh?´ng available                                                                                                                                                                      PASS   06:30-07:30 overlap 07-08
+INV-01               Invariant: kh?´ng c?³ 2 BOOKED overlap c?¹ng s?¢n                                                                                                                                                        PASS   OK
+SEC-01               bcm_app tá»± g?¡n SESSION_CONTEXT UserId bá»‹ cháº·n (giáº£ máº¡o)                                                                                                                                       PASS   EXECUTE permission denied (229) tr?ªn sp_set_session_context
+SEC-02               bcm_app tá»± g?¡n SESSION_CONTEXT Role bá»‹ cháº·n (giáº£ máº¡o)                                                                                                                                         PASS   EXECUTE permission denied (229) tr?ªn sp_set_session_context
+SEC-03               sp_Login (bcm_app) táº¡o context MANAGER há»£p lá»‡                                                                                                                                                      PASS   UserId+Role Ä‘?ºng, SESSION_CONTEXT ENFORCED
+SEC-04               Approve w/o session (attacker giáº£ manager) bá»‹ cháº·n                                                                                                                                                 PASS   Kh?´ng set Ä‘Æ°á»£c context (229); approve kh?´ng thá»ƒ cháº¡y vá»›i giáº£ manager
+SEC-05               Guest browse sp_GetAvailableCourts public (no session)                                                                                                                                                   PASS   Sá»‘ s?¢n trá»‘ng: 5
+SP-01                Book há»£p lá»‡ â†’ 1 PENDING + audit + notification                                                                                                                                                     PASS   TotalCost=100.000
+SP-02                Book overlap vá»›i BOOKED                                                                                                                                                                                PASS   Bá»‹ tá»« chá»‘i 50021, transaction rollback
+SP-03                Approve há»£p lá»‡ PENDINGâ†’BOOKED                                                                                                                                                                      PASS   BOOKED + audit APPROVE
+SP-04                Approve overlap â†’ rollback, kh?´ng táº¡o BOOKED overlap                                                                                                                                                PASS   pB giá»¯ PENDING, chá»‰ 1 BOOKED
+SP-05                Reject PENDINGâ†’REJECTED                                                                                                                                                                                PASS   Rejected bá»Ÿi Court Manager
+SP-05b               Reject kh?´ng-PENDING bá»‹ tá»« chá»‘i                                                                                                                                                                   PASS   Lá»—i 50043
+SP-06                Cancel PENDINGâ†’CANCELLED                                                                                                                                                                               PASS   Customer tá»± há»§y PENDING
+SP-06b               Customer há»§y booking cá»§a ngÆ°á»i kh?¡c bá»‹ cháº·n                                                                                                                                                  PASS   Lá»—i 50054 ownership
+SP-07                Cancel BOOKED < 3h bá»‹ tá»« chá»‘i, váº«n BOOKED                                                                                                                                                        PASS   Lá»—i 50055; váº«n BOOKED
+SP-08                Sai quyá»n: customer approve bá»‹ tá»« chá»‘i                                                                                                                                                           PASS   Lá»—i 50031
+SP-09                Complete sai state bá»‹ tá»« chá»‘i                                                                                                                                                                      PASS   Lá»—i 50062 (chá»‰ BOOKEDâ†’COMPLETED)
+SP-10                Cross-midnight (21:30â†’00:30) bá»‹ tá»« chá»‘i                                                                                                                                                          PASS   Lá»—i 50023: kh?´ng Ä‘Æ°á»£c qua Ä‘?ªm
+SP-11                Kh?´ng SESSION_CONTEXT + UserId customer t?¹y ?½ bá»‹ cháº·n                                                                                                                                             PASS   Lá»—i 50010; kh?´ng ghi booking
+SP-12                Kh?´ng SESSION_CONTEXT + UserId manager t?¹y ?½ bá»‹ cháº·n                                                                                                                                              PASS   Lá»—i 50030 phi?ªn chÆ°a Ä‘Äƒng nháº­p
+SP-13                GetMyBookings kh?´ng phi?ªn bá»‹ cháº·n (háº¿t fallback)                                                                                                                                                 PASS   Lá»—i 51054
+SP-14                GetNotifications kh?´ng phi?ªn bá»‹ cháº·n                                                                                                                                                               PASS   Lá»—i 51060
+SP-15                Book sai actor (SESSION_CONTEXT=cus1, UserId=cus2) bá»‹ cháº·n                                                                                                                                           PASS   Lá»—i 50010; kh?´ng ghi booking
+SP-16                GetMyBookings cross-user (cus1â†”cus2) bá»‹ cháº·n                                                                                                                                                       PASS   Lá»—i 51054: kh?´ng khá»›p phi?ªn Ä‘Äƒng nháº­p
+SP-17                GetNotifications cross-user (cus1â†”cus2) bá»‹ cháº·n                                                                                                                                                    PASS   Lá»—i 51060
+SP-18                GetDashboard impersonation (cm1â†”cm2) bá»‹ cháº·n                                                                                                                                                       PASS   Lá»—i 50110
+SP-19                GetDashboard kh?´ng phi?ªn + UserId t?¹y ?½ bá»‹ cháº·n                                                                                                                                                  PASS   Lá»—i 50110
+SP-20                Approve impersonation (session=cus1, claim=mgr) bá»‹ cháº·n                                                                                                                                              PASS   Lá»—i 50030
+SP-21                Cancel impersonation (session=cus1, claim=cus2) bá»‹ cháº·n                                                                                                                                              PASS   Lá»—i 50050
+TX-01                Lá»—i giá»¯a transaction â†’ kh?´ng partial write                                                                                                                                                        PASS   ROLLBACK; kh?´ng c?²n booking/audit
+TR-01                Direct state transition sai bá»‹ trigger cháº·n                                                                                                                                                          PASS   Äá»•i tráº¡ng th?¡i bá»‹ cháº·n, váº«n PENDING
+TR-02                Direct BOOKED overlap bá»‹ trigger cháº·n                                                                                                                                                                PASS   Lá»—i 51001 tá»« safety-net trigger
+TR-03a               Multi-row insert: audit Ä‘á»§ 2 d?²ng                                                                                                                                                                    PASS   2 audit cho 2 booking
+TR-03b               Multi-row trigger báº¯t overlap (set-based)                                                                                                                                                              PASS   Lá»—i 51001; to? n bá»™ statement bá»‹ cháº·n
+--- Káº¿t th?ºc 09_tests_functional.sql. Xem báº£ng #Results á»Ÿ tr?ªn (Total/Passed/Failed) ---
+--- C?¡c test multi-session (CC/PH/DL) cháº¡y ri?ªng trong 10â†’14. ---

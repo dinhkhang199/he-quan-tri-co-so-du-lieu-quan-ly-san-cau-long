@@ -1,0 +1,33 @@
+ VerifyDb  : BadmintonCourtManagement_Verify
+ Backup dir: C:\Program Files\Microsoft SQL Server\MSSQL16.SQLEXPRESS\MSSQL\Backup\
+ Data dir  : C:\Program Files\Microsoft SQL Server\MSSQL16.SQLEXPRESS\MSSQL\DATA\
+ Đã dọn DB kiểm thử cũ.
+ => C:\Program Files\Microsoft SQL Server\MSSQL16.SQLEXPRESS\MSSQL\Backup\BadmintonCourtManagement.bak
+10 percent processed.
+20 percent processed.
+30 percent processed.
+40 percent processed.
+51 percent processed.
+60 percent processed.
+70 percent processed.
+80 percent processed.
+90 percent processed.
+100 percent processed.
+Processed 720 pages for database 'BadmintonCourtManagement', file 'BadmintonCourtManagement' on file 1.
+Processed 1 pages for database 'BadmintonCourtManagement', file 'BadmintonCourtManagement_log' on file 1.
+BACKUP DATABASE successfully processed 721 pages in 0.085 seconds (66.193 MB/sec).
+ BACKUP hoàn tất.
+The backup set on file 1 is valid.
+ RESTORE VERIFYONLY: backup hợp lệ.
+ Restore data files vào: C:\Program Files\Microsoft SQL Server\MSSQL16.SQLEXPRESS\MSSQL\DATA\
+Processed 720 pages for database 'BadmintonCourtManagement_Verify', file 'BadmintonCourtManagement' on file 1.
+Processed 1 pages for database 'BadmintonCourtManagement_Verify', file 'BadmintonCourtManagement_log' on file 1.
+RESTORE DATABASE successfully processed 721 pages in 0.046 seconds (122.314 MB/sec).
+ RESTORE sang DB kiểm thử hoàn tất.
+ --- So sánh dữ liệu lõi ---
+ Users    : goc=7 | restore=7
+ Courts   : goc=6 | restore=6
+ Bookings : goc=15 | restore=15
+ >> Khớp số lượng.
+ Bookings khớp 100% (userId/courtId/time/status/cost).
+--- Hết 15_backup_restore_demo.sql. ---

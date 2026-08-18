@@ -1,0 +1,21 @@
+Changed database context to 'BadmintonCourtManagement'.
+ Bắt đầu: B muốn khóa theo thứ tự Bookings(b1) -> Courts(C1) (kịch bản lỗi).
+ Đã khóa Bookings b1. Chờ 3 giây để A khóa Courts C1...
+ Đã ghi Courts C1 (không bị deadlock).
+ Transaction B commit thành công (deadlock không rơi vào B).
+ Kết luận DL-01: deadlock có victim (A) - B commit bình thường.
+
+ FIX: lock ordering nhất quán Court -> Booking.
+ Đã khóa Courts C2. Chờ 3 giây...
+ Đã khóa Bookings b5. Hoàn tất.
+ >>> Commit thành công - KHÔNG deadlock với lock ordering nhất quán.
+
+ Bắt đầu cancel booking DL-03 (sẽ bị block tới khi A nhả khóa)...
+UserId                               Username                                           Role                 IsActive LastLogin
+------------------------------------ -------------------------------------------------- -------------------- -------- --------------------------------------
+A1000001-0000-0000-0000-000000000001 manager                                            MANAGER                     1                    2026-08-18 10:37:12
+CourtId
+------------------------------------
+C1000001-0000-0000-0000-000000000003
+ Cancel thành công (booking CANCELLED) sau khi hết block.
+ ASSERTION PASS: không deadlock; phép cancel thực hiện tuần tự sau approve.

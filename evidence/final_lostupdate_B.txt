@@ -1,0 +1,8 @@
+Changed database context to 'BadmintonCourtManagement'.
+ ==== PHASE UNSAFE ====
+ Đọc PricePerHour: 100000
+ UNSAFE: Commit 120.000 (B ghi +20.000).
+ ==== PHASE FIXED ====
+ SELECT WITH UPDLOCK → đợi A commit, bị block cho tới khi khóa nhả...
+ Hết block. Đọc số mới nhất: 150000 → cộng 20.000 nối tiếp.
+ FIXED: Ghi xong → Final = 170.000 (không lost update).

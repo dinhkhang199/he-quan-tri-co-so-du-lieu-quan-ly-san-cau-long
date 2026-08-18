@@ -1,0 +1,6 @@
+Changed database context to 'BadmintonCourtManagement'.
+ ==== PHASE UNSAFE ====
+ Đã INSERT + COMMIT sentinel ...0001 (ngày 2026-08-28).
+ ==== PHASE FIXED ====
+ INSERT sentinel ...0002 (ngày 2026-08-29) → nếu A đang SERIALIZABLE, lệnh này BỊ BLOCKED tới khi A kết thúc test...
+ Hết block → INSERT thành công sau khi A kết thúc (A không thấy trong lúc đọc).

@@ -1,9 +1,12 @@
 /* ============================================================
    BadmintonCourtManagement
    Script : 09_tests_functional.sql
-   Mục đích: Chạy test matrix phiên đơn (DB-*, FN-*, SP-*, TR-*, TX-01)
+   Mục đích: Chạy test matrix phiên đơn (DB-*, FN-*, SP-*, TR-*, TX-01, INV-01)
+             + negative security tests (SESSION_CONTEXT bắt buộc - Option A).
              Kết quả ghi vào #Results rồi in summary cuối script.
    LƯU Ý : Chạy sau khi đã chạy 00→08. Có thể chạy lại.
+   Option A: mọi SP nghiệp vụ phải gọi sp_Login trước (SESSION_CONTEXT).
+   Trong test, trước mỗi SP call đều có sp_Login cho đúng actor.
    ============================================================ */
 
 USE BadmintonCourtManagement;
@@ -26,8 +29,6 @@ GO
 
 -- ============================================================
 -- RESET dữ liệu test từ lần chạy trước (giúp script chạy lại được)
--- Chỉ xóa booking do test tạo (Bookings có GUID khác prefix seed),
--- kèm ActivityLogs/Notifications liên quan (đúng thứ tự FK).
 -- ============================================================
 DELETE n
 FROM dbo.Notifications n
@@ -198,17 +199,12 @@ IF @cost = 320000
 ELSE
     INSERT #Results VALUES('FN-03', N'Cost > 3h = block 3h + giờ lẻ', 0, N'Kết quả: ' + CAST(@cost AS VARCHAR(20)));
 
--- ------------------------------------------------------------
--- FN-04: boundary End A = Start B -> available
--- (dùng booking BOOKED đã approve ở test SP-02 bên dưới → xếp đúng thứ tự)
--- ------------------------------------------------------------
+-- ================= SP-01: Book hợp lệ (actor = cus2) =================
 DECLARE @pendingId1 UNIQUEIDENTIFIER = NEWID();
-DECLARE @pendingId2 UNIQUEIDENTIFIER = NEWID();
 DECLARE @tc DECIMAL(12,0);
 DECLARE @ok BIT = 0;
-
--- ================= SP-01: Book hợp lệ =================
 BEGIN TRY
+    EXEC dbo.sp_Login @Username=N'customer2', @Password=N'cus2pass';
     EXEC dbo.sp_BookCourt @UserId=@cus2, @CourtId=@c1, @StartTime=@D1_0600, @EndTime=@D1_0700,
          @BookingId=@pendingId1 OUTPUT, @TotalCost=@tc OUTPUT;
     IF EXISTS (SELECT 1 FROM dbo.Bookings WHERE BookingId=@pendingId1 AND Status=N'PENDING' AND TotalCost=100000)
@@ -226,10 +222,12 @@ ELSE IF NOT EXISTS (SELECT 1 FROM #Results WHERE id='SP-01')
     INSERT #Results VALUES('SP-01', N'Book hợp lệ → 1 PENDING + audit + notification', 0, N'Thiếu PENDING/audit/notification');
 
 -- ================= SP-02: Book overlap với BOOKED =================
+-- Tạo + approve 1 booking BOOKED trên court1 khung 07-08 (actor: cus1 book, mgr approve)
 DECLARE @xId UNIQUEIDENTIFIER = NEWID();
--- Tạo + approve 1 booking BOOKED trên court1 khung 07-08
 BEGIN TRY
+    EXEC dbo.sp_Login @Username=N'customer1', @Password=N'cus1pass';
     EXEC dbo.sp_BookCourt @UserId=@cus1, @CourtId=@c1, @StartTime=@D1_0700, @EndTime=@D1_0800, @BookingId=@xId OUTPUT, @TotalCost=@tc OUTPUT;
+    EXEC dbo.sp_Login @Username=N'manager', @Password=N'manager123';
     EXEC dbo.sp_ApproveBooking @SessionUserId=@mgr, @BookingId=@xId;
 END TRY
 BEGIN CATCH
@@ -238,6 +236,7 @@ END CATCH;
 
 BEGIN TRY
     DECLARE @overlapId UNIQUEIDENTIFIER = NEWID();
+    EXEC dbo.sp_Login @Username=N'customer2', @Password=N'cus2pass';
     EXEC dbo.sp_BookCourt @UserId=@cus2, @CourtId=@c1, @StartTime=@D1_0730, @EndTime=@D1_0830, @BookingId=@overlapId OUTPUT, @TotalCost=@tc OUTPUT;
     INSERT #Results VALUES('SP-02', N'Book overlap với BOOKED', 0, N'Không bị từ chối (đã tạo booking mới!)');
 END TRY
@@ -249,21 +248,21 @@ BEGIN CATCH
 END CATCH;
 
 -- ================= FN-04 (dựa trên @xId BOOKED 07-08 court1) =================
--- Chạm biên: 08-09 -> trống
 IF dbo.fn_IsCourtAvailable(@c1, @D1_0800, @D1_0900) = 1
     INSERT #Results VALUES('FN-04', N'Boundary: End A = Start B → available', 1, N'07-08 & 08-09 không overlap');
 ELSE
     INSERT #Results VALUES('FN-04', N'Boundary: End A = Start B → available', 0, N'fn trả 0 (sai contract)');
--- Overlap thật: 06:30-07:30 -> không available
 IF dbo.fn_IsCourtAvailable(@c1, @D1_0630, @D1_0730) = 0
     INSERT #Results VALUES('FN-04b', N'Overlap thật → không available', 1, N'06:30-07:30 overlap 07-08');
 ELSE
     INSERT #Results VALUES('FN-04b', N'Overlap thật → không available', 0, N'fn trả 1 (sai contract)');
 
--- ================= SP-03: Approve hợp lệ =================
+-- ================= SP-03: Approve hợp lệ (cus2 book, mgr approve) =================
 DECLARE @s3Id UNIQUEIDENTIFIER = NEWID();
 BEGIN TRY
+    EXEC dbo.sp_Login @Username=N'customer2', @Password=N'cus2pass';
     EXEC dbo.sp_BookCourt @UserId=@cus2, @CourtId=@c1, @StartTime=@D1_0800, @EndTime=@D1_0900, @BookingId=@s3Id OUTPUT, @TotalCost=@tc OUTPUT;
+    EXEC dbo.sp_Login @Username=N'manager', @Password=N'manager123';
     EXEC dbo.sp_ApproveBooking @SessionUserId=@mgr, @BookingId=@s3Id;
     IF EXISTS (SELECT 1 FROM dbo.Bookings WHERE BookingId=@s3Id AND Status=N'BOOKED')
       AND EXISTS (SELECT 1 FROM dbo.ActivityLogs WHERE BookingId=@s3Id AND Action=N'APPROVE')
@@ -279,8 +278,11 @@ END CATCH;
 DECLARE @pA UNIQUEIDENTIFIER = NEWID();
 DECLARE @pB UNIQUEIDENTIFIER = NEWID();
 BEGIN TRY
+    EXEC dbo.sp_Login @Username=N'customer1', @Password=N'cus1pass';
     EXEC dbo.sp_BookCourt @UserId=@cus1, @CourtId=@c1, @StartTime=@D1_0900, @EndTime=@D1_1000, @BookingId=@pA OUTPUT, @TotalCost=@tc OUTPUT;
+    EXEC dbo.sp_Login @Username=N'customer2', @Password=N'cus2pass';
     EXEC dbo.sp_BookCourt @UserId=@cus2, @CourtId=@c1, @StartTime=@D1_0900, @EndTime=@D1_1000, @BookingId=@pB OUTPUT, @TotalCost=@tc OUTPUT;
+    EXEC dbo.sp_Login @Username=N'manager', @Password=N'manager123';
     EXEC dbo.sp_ApproveBooking @SessionUserId=@mgr, @BookingId=@pA;      -- ưu tiên pA
     BEGIN TRY
         EXEC dbo.sp_ApproveBooking @SessionUserId=@mgr, @BookingId=@pB;  -- phải bị từ chối
@@ -303,10 +305,12 @@ BEGIN CATCH
     INSERT #Results VALUES('SP-04', N'Approve overlap → rollback, không tạo BOOKED overlap', 0, N'Setup fail: ' + ERROR_MESSAGE());
 END CATCH;
 
--- ================= SP-05: Reject PENDING =================
+-- ================= SP-05: Reject PENDING (cm1 reject) =================
 DECLARE @s5Id UNIQUEIDENTIFIER = NEWID();
 BEGIN TRY
+    EXEC dbo.sp_Login @Username=N'customer2', @Password=N'cus2pass';
     EXEC dbo.sp_BookCourt @UserId=@cus2, @CourtId=@c2, @StartTime=@D1_0600, @EndTime=@D1_0700, @BookingId=@s5Id OUTPUT, @TotalCost=@tc OUTPUT;
+    EXEC dbo.sp_Login @Username=N'courtmanager1', @Password=N'cm1pass';
     EXEC dbo.sp_RejectBooking @SessionUserId=@cm1, @BookingId=@s5Id;
     IF (SELECT Status FROM dbo.Bookings WHERE BookingId=@s5Id) = N'REJECTED'
         INSERT #Results VALUES('SP-05', N'Reject PENDING→REJECTED', 1, N'Rejected bởi Court Manager');
@@ -319,6 +323,7 @@ END CATCH;
 
 -- Reject lần 2 (không còn PENDING) phải thất bại
 BEGIN TRY
+    EXEC dbo.sp_Login @Username=N'manager', @Password=N'manager123';
     EXEC dbo.sp_RejectBooking @SessionUserId=@mgr, @BookingId=@s5Id;
     INSERT #Results VALUES('SP-05b', N'Reject không-PENDING bị từ chối', 0, N'Reject thành công (sai)');
 END TRY
@@ -332,6 +337,7 @@ END CATCH;
 -- ================= SP-06: Cancel PENDING (customer của chính mình) =================
 DECLARE @s6Id UNIQUEIDENTIFIER = NEWID();
 BEGIN TRY
+    EXEC dbo.sp_Login @Username=N'customer3', @Password=N'cus3pass';
     EXEC dbo.sp_BookCourt @UserId=@cus3, @CourtId=@c3, @StartTime=@D1_0600, @EndTime=@D1_0700, @BookingId=@s6Id OUTPUT, @TotalCost=@tc OUTPUT;
     EXEC dbo.sp_CancelBooking @SessionUserId=@cus3, @BookingId=@s6Id;
     IF (SELECT Status FROM dbo.Bookings WHERE BookingId=@s6Id) = N'CANCELLED'
@@ -346,7 +352,9 @@ END CATCH;
 -- Cancel booking KHÔNG phải của mình -> bị chặn
 BEGIN TRY
     DECLARE @otherPend UNIQUEIDENTIFIER = NEWID();
+    EXEC dbo.sp_Login @Username=N'customer1', @Password=N'cus1pass';
     EXEC dbo.sp_BookCourt @UserId=@cus1, @CourtId=@c3, @StartTime=@D1_0900, @EndTime=@D1_1000, @BookingId=@otherPend OUTPUT, @TotalCost=@tc OUTPUT;
+    EXEC dbo.sp_Login @Username=N'customer3', @Password=N'cus3pass';
     EXEC dbo.sp_CancelBooking @SessionUserId=@cus3, @BookingId=@otherPend;
     INSERT #Results VALUES('SP-06b', N'Customer hủy booking của người khác bị chặn', 0, N'Không bị chặn (sai)');
 END TRY
@@ -359,13 +367,13 @@ END CATCH;
 
 -- ================= SP-07: Cancel BOOKED < 3h (customer) bị từ chối, vẫn BOOKED =================
 DECLARE @nearId UNIQUEIDENTIFIER = NEWID();
-DECLARE @nearStart datetime2(0) = DATEADD(MINUTE, 90, SYSDATETIME());  -- ~1,5h nữa (thuộc < 3h)
+DECLARE @nearStart datetime2(0) = DATEADD(MINUTE, 90, SYSDATETIME());
 DECLARE @nearEnd datetime2(0) = DATEADD(MINUTE, 180, SYSDATETIME());
--- Tạo thẳng BOOKED (dữ liệu giả lập test quy tắc hủy; sân 6 inactive không vướng overlap)
 BEGIN TRY
     INSERT INTO dbo.Bookings (BookingId, UserId, CourtId, StartTime, EndTime, Status, TotalCost)
     VALUES (@nearId, @cus1, @c6, @nearStart, @nearEnd, N'BOOKED', 100000);
     BEGIN TRY
+        EXEC dbo.sp_Login @Username=N'customer1', @Password=N'cus1pass';
         EXEC dbo.sp_CancelBooking @SessionUserId=@cus1, @BookingId=@nearId;
         INSERT #Results VALUES('SP-07', N'Cancel BOOKED < 3h bị từ chối, vẫn BOOKED', 0, N'Cancel thành công (sai)');
     END TRY
@@ -380,7 +388,6 @@ BEGIN TRY
         ELSE
             INSERT #Results VALUES('SP-07', N'Cancel BOOKED < 3h bị từ chối, vẫn BOOKED', 0, N'Mã lỗi: ' + CAST(ERROR_NUMBER() AS VARCHAR(10)));
     END CATCH;
-    -- (không DELETE dữ liệu giả để tránh vi phạm FK từ ActivityLogs/Notifications do trigger tạo)
 END TRY
 BEGIN CATCH
     INSERT #Results VALUES('SP-07', N'Cancel BOOKED < 3h bị từ chối, vẫn BOOKED', 0, N'Setup fail: ' + ERROR_MESSAGE());
@@ -389,6 +396,7 @@ END CATCH;
 -- ================= SP-08: Sai quyền (customer approve) =================
 DECLARE @s8Id UNIQUEIDENTIFIER = NEWID();
 BEGIN TRY
+    EXEC dbo.sp_Login @Username=N'customer1', @Password=N'cus1pass';
     EXEC dbo.sp_BookCourt @UserId=@cus1, @CourtId=@c4, @StartTime=@D1_0600, @EndTime=@D1_0700, @BookingId=@s8Id OUTPUT, @TotalCost=@tc OUTPUT;
     BEGIN TRY
         EXEC dbo.sp_ApproveBooking @SessionUserId=@cus1, @BookingId=@s8Id;
@@ -408,8 +416,10 @@ END CATCH;
 -- ================= SP-09: Complete sai state (PENDING) =================
 DECLARE @s9Id UNIQUEIDENTIFIER = NEWID();
 BEGIN TRY
+    EXEC dbo.sp_Login @Username=N'customer2', @Password=N'cus2pass';
     EXEC dbo.sp_BookCourt @UserId=@cus2, @CourtId=@c4, @StartTime=@D1_0700, @EndTime=@D1_0800, @BookingId=@s9Id OUTPUT, @TotalCost=@tc OUTPUT;
     BEGIN TRY
+        EXEC dbo.sp_Login @Username=N'courtmanager2', @Password=N'cm2pass';
         EXEC dbo.sp_CompleteBooking @SessionUserId=@cm2, @BookingId=@s9Id;
         INSERT #Results VALUES('SP-09', N'Complete sai state bị từ chối', 0, N'Complete thành công (sai)');
     END TRY
@@ -427,9 +437,10 @@ END CATCH;
 -- ================= TR-01: Direct state transition sai (trigger chặn) =================
 DECLARE @tr1Id UNIQUEIDENTIFIER = NEWID();
 BEGIN TRY
+    EXEC dbo.sp_Login @Username=N'customer1', @Password=N'cus1pass';
     EXEC dbo.sp_BookCourt @UserId=@cus1, @CourtId=@c5, @StartTime=@D1_0600, @EndTime=@D1_0700, @BookingId=@tr1Id OUTPUT, @TotalCost=@tc OUTPUT;
     BEGIN TRY
-        UPDATE dbo.Bookings SET Status = N'COMPLETED' WHERE BookingId = @tr1Id;  -- PENDING→COMPLETED bất hợp lệ
+        UPDATE dbo.Bookings SET Status = N'COMPLETED' WHERE BookingId = @tr1Id;
         INSERT #Results VALUES('TR-01', N'Direct state transition sai bị trigger chặn', 0, N'Update thành công (sai)');
     END TRY
     BEGIN CATCH
@@ -449,7 +460,6 @@ BEGIN CATCH
 END CATCH;
 
 -- ================= TR-02: Direct BOOKED overlap (trigger chặn) =================
--- @xId đang là BOOKED (D1 07-08 court1) từ test SP-02
 DECLARE @tr2Id UNIQUEIDENTIFIER = NEWID();
 BEGIN TRY
     INSERT INTO dbo.Bookings (BookingId, UserId, CourtId, StartTime, EndTime, Status, TotalCost)
@@ -485,8 +495,8 @@ DECLARE @m3 UNIQUEIDENTIFIER = NEWID();
 BEGIN TRY
     INSERT INTO dbo.Bookings (BookingId, UserId, CourtId, StartTime, EndTime, Status, TotalCost)
     VALUES
-        (@m3, @cus1, @c2, @D1_0900, @D1_1000, N'PENDING', 100000),          -- dòng OK
-        (NEWID(), @cus2, @c1, @D1_0700, @D1_0900, N'BOOKED', 100000);        -- dòng overlap @xId (BOOKED 07-08)
+        (@m3, @cus1, @c2, @D1_0900, @D1_1000, N'PENDING', 100000),
+        (NEWID(), @cus2, @c1, @D1_0700, @D1_0900, N'BOOKED', 100000);
     INSERT #Results VALUES('TR-03b', N'Multi-row trigger bắt overlap (set-based)', 0, N'Không bị chặn (sai)');
 END TRY
 BEGIN CATCH
@@ -507,7 +517,7 @@ BEGIN TRY
     BEGIN TRAN;
         INSERT INTO dbo.Bookings (BookingId, UserId, CourtId, StartTime, EndTime, Status, TotalCost)
         VALUES (@txId, @cus1, @c2, @D1_1000, @D1_1100, N'PENDING', 100000);
-        SELECT 1/0;   -- lỗi cố tình giữa transaction
+        SELECT 1/0;
     COMMIT;
 END TRY
 BEGIN CATCH
@@ -534,6 +544,307 @@ IF NOT EXISTS
     INSERT #Results VALUES('INV-01', N'Invariant: không có 2 BOOKED overlap cùng sân', 1, N'OK');
 ELSE
     INSERT #Results VALUES('INV-01', N'Invariant: không có 2 BOOKED overlap cùng sân', 0, N'Tồn tại overlap');
+
+-- ================= SP-10: Cross-midnight booking bị từ chối (KNOWN-01 fix) =================
+DECLARE @midId UNIQUEIDENTIFIER = NEWID();
+DECLARE @midStart datetime2(0) = DATETIMEFROMPARTS(YEAR(@d1),MONTH(@d1),DAY(@d1),21,30,0,0);
+DECLARE @midEnd datetime2(0) = DATEADD(MINUTE, 180, @midStart);
+BEGIN TRY
+    EXEC dbo.sp_Login @Username=N'customer1', @Password=N'cus1pass';
+    EXEC dbo.sp_BookCourt @UserId=@cus1, @CourtId=@c3, @StartTime=@midStart, @EndTime=@midEnd,
+         @BookingId=@midId OUTPUT, @TotalCost=@tc OUTPUT;
+    INSERT #Results VALUES('SP-10', N'Cross-midnight (21:30→00:30) bị từ chối', 0, N'Không bị chặn (sai)');
+END TRY
+BEGIN CATCH
+    IF ERROR_NUMBER() = 50023
+        INSERT #Results VALUES('SP-10', N'Cross-midnight (21:30→00:30) bị từ chối', 1, N'Lỗi 50023: không được qua đêm');
+    ELSE
+        INSERT #Results VALUES('SP-10', N'Cross-midnight (21:30→00:30) bị từ chối', 0, N'Mã lỗi: ' + CAST(ERROR_NUMBER() AS VARCHAR(10)));
+END CATCH;
+
+-- ============================================================
+-- NEGATIVE SECURITY TESTS (SESSION_CONTEXT bắt buộc - Option A)
+-- ============================================================
+-- SP-11: Chưa đăng nhập (SESSION_CONTEXT rỗng) + UserId customer tùy ý
+--        → sp_BookCourt phải bị từ chối 50010, không ghi gì.
+EXEC sp_set_session_context @key=N'UserId', @value=NULL;
+EXEC sp_set_session_context @key=N'Role', @value=NULL;
+DECLARE @ctxId UNIQUEIDENTIFIER = NEWID();
+BEGIN TRY
+    EXEC dbo.sp_BookCourt @UserId=@cus1, @CourtId=@c3, @StartTime=@D1_0600, @EndTime=@D1_0700,
+         @BookingId=@ctxId OUTPUT, @TotalCost=@tc OUTPUT;
+    INSERT #Results VALUES('SP-11', N'Không SESSION_CONTEXT + UserId customer tùy ý bị chặn', 0, N'Không bị chặn (sai)');
+END TRY
+BEGIN CATCH
+    IF ERROR_NUMBER() = 50010
+       AND NOT EXISTS (SELECT 1 FROM dbo.Bookings WHERE BookingId=@ctxId)
+        INSERT #Results VALUES('SP-11', N'Không SESSION_CONTEXT + UserId customer tùy ý bị chặn', 1, N'Lỗi 50010; không ghi booking');
+    ELSE
+        INSERT #Results VALUES('SP-11', N'Không SESSION_CONTEXT + UserId customer tùy ý bị chặn', 0, N'Mã lỗi: ' + CAST(ERROR_NUMBER() AS VARCHAR(10)));
+END CATCH;
+
+-- SP-12: Chưa đăng nhập + UserId manager tùy ý
+--        → sp_ApproveBooking phải bị từ chối 50030 (không có phiên),
+--        không cần booking hợp lệ vì guard phiên chạy trước khi lookup.
+BEGIN TRY
+    EXEC dbo.sp_ApproveBooking @SessionUserId=@mgr, @BookingId='B1000001-0000-0000-0000-000000000004';
+    INSERT #Results VALUES('SP-12', N'Không SESSION_CONTEXT + UserId manager tùy ý bị chặn', 0, N'Không bị chặn (sai)');
+END TRY
+BEGIN CATCH
+    IF ERROR_NUMBER() = 50030
+        INSERT #Results VALUES('SP-12', N'Không SESSION_CONTEXT + UserId manager tùy ý bị chặn', 1, N'Lỗi 50030 phiên chưa đăng nhập');
+    ELSE
+        INSERT #Results VALUES('SP-12', N'Không SESSION_CONTEXT + UserId manager tùy ý bị chặn', 0, N'Mã lỗi: ' + CAST(ERROR_NUMBER() AS VARCHAR(10)));
+END CATCH;
+
+-- SP-13: GetMyBookings chưa đăng nhập (không fallback) -> 51054
+BEGIN TRY
+    EXEC dbo.sp_GetMyBookings @UserId=@cus1;
+    INSERT #Results VALUES('SP-13', N'GetMyBookings không phiên bị chặn (hết fallback)', 0, N'Không bị chặn (sai)');
+END TRY
+BEGIN CATCH
+    IF ERROR_NUMBER() = 51054
+        INSERT #Results VALUES('SP-13', N'GetMyBookings không phiên bị chặn (hết fallback)', 1, N'Lỗi 51054');
+    ELSE
+        INSERT #Results VALUES('SP-13', N'GetMyBookings không phiên bị chặn (hết fallback)', 0, N'Mã lỗi: ' + CAST(ERROR_NUMBER() AS VARCHAR(10)));
+END CATCH;
+
+-- SP-14: GetNotifications chưa đăng nhập -> 51060
+BEGIN TRY
+    EXEC dbo.sp_GetNotifications @UserId=@cus1;
+    INSERT #Results VALUES('SP-14', N'GetNotifications không phiên bị chặn', 0, N'Không bị chặn (sai)');
+END TRY
+BEGIN CATCH
+    IF ERROR_NUMBER() = 51060
+        INSERT #Results VALUES('SP-14', N'GetNotifications không phiên bị chặn', 1, N'Lỗi 51060');
+    ELSE
+        INSERT #Results VALUES('SP-14', N'GetNotifications không phiên bị chặn', 0, N'Mã lỗi: ' + CAST(ERROR_NUMBER() AS VARCHAR(10)));
+END CATCH;
+
+-- ============================================================
+-- Từ đây: đăng nhập đúng actor rồi thử impersonation (truyền UserId/khác)
+-- ============================================================
+-- SP-15: Session = customer1, truyền @UserId=@cus2 → sp_BookCourt 50010
+EXEC dbo.sp_Login @Username=N'customer1', @Password=N'cus1pass';
+DECLARE @imId UNIQUEIDENTIFIER = NEWID();
+BEGIN TRY
+    EXEC dbo.sp_BookCourt @UserId=@cus2, @CourtId=@c5, @StartTime=@D1_1000, @EndTime=@D1_1100,
+         @BookingId=@imId OUTPUT, @TotalCost=@tc OUTPUT;
+    INSERT #Results VALUES('SP-15', N'Book sai actor (SESSION_CONTEXT=cus1, UserId=cus2) bị chặn', 0, N'Không bị chặn (sai)');
+END TRY
+BEGIN CATCH
+    IF ERROR_NUMBER() = 50010
+       AND NOT EXISTS (SELECT 1 FROM dbo.Bookings WHERE BookingId=@imId)
+        INSERT #Results VALUES('SP-15', N'Book sai actor (SESSION_CONTEXT=cus1, UserId=cus2) bị chặn', 1, N'Lỗi 50010; không ghi booking');
+    ELSE
+        INSERT #Results VALUES('SP-15', N'Book sai actor (SESSION_CONTEXT=cus1, UserId=cus2) bị chặn', 0, N'Mã lỗi: ' + CAST(ERROR_NUMBER() AS VARCHAR(10)));
+END CATCH;
+
+-- SP-16: Session = customer1, GetMyBookings @UserId=@cus2 → 51054
+BEGIN TRY
+    EXEC dbo.sp_GetMyBookings @UserId=@cus2;
+    INSERT #Results VALUES('SP-16', N'GetMyBookings cross-user (cus1↔cus2) bị chặn', 0, N'Không bị chặn (sai)');
+END TRY
+BEGIN CATCH
+    IF ERROR_NUMBER() = 51054
+        INSERT #Results VALUES('SP-16', N'GetMyBookings cross-user (cus1↔cus2) bị chặn', 1, N'Lỗi 51054: không khớp phiên đăng nhập');
+    ELSE
+        INSERT #Results VALUES('SP-16', N'GetMyBookings cross-user (cus1↔cus2) bị chặn', 0, N'Mã lỗi: ' + CAST(ERROR_NUMBER() AS VARCHAR(10)));
+END CATCH;
+
+-- SP-17: Session = customer1, GetNotifications @UserId=@cus2 → 51060
+BEGIN TRY
+    EXEC dbo.sp_GetNotifications @UserId=@cus2;
+    INSERT #Results VALUES('SP-17', N'GetNotifications cross-user (cus1↔cus2) bị chặn', 0, N'Không bị chặn (sai)');
+END TRY
+BEGIN CATCH
+    IF ERROR_NUMBER() = 51060
+        INSERT #Results VALUES('SP-17', N'GetNotifications cross-user (cus1↔cus2) bị chặn', 1, N'Lỗi 51060');
+    ELSE
+        INSERT #Results VALUES('SP-17', N'GetNotifications cross-user (cus1↔cus2) bị chặn', 0, N'Mã lỗi: ' + CAST(ERROR_NUMBER() AS VARCHAR(10)));
+END CATCH;
+
+-- SP-18: GetDashboard impersonation - session = courtmanager1, truyền @SessionUserId=@cm2 → 50110
+EXEC dbo.sp_Login @Username=N'courtmanager1', @Password=N'cm1pass';
+BEGIN TRY
+    EXEC dbo.sp_GetDashboard @SessionUserId=@cm2;
+    INSERT #Results VALUES('SP-18', N'GetDashboard impersonation (cm1↔cm2) bị chặn', 0, N'Không bị chặn (sai)');
+END TRY
+BEGIN CATCH
+    IF ERROR_NUMBER() = 50110
+        INSERT #Results VALUES('SP-18', N'GetDashboard impersonation (cm1↔cm2) bị chặn', 1, N'Lỗi 50110');
+    ELSE
+        INSERT #Results VALUES('SP-18', N'GetDashboard impersonation (cm1↔cm2) bị chặn', 0, N'Mã lỗi: ' + CAST(ERROR_NUMBER() AS VARCHAR(10)));
+END CATCH;
+
+-- SP-19: GetDashboard không phiên (session trống + UserId manager tùy ý) → 50110
+EXEC sp_set_session_context @key=N'UserId', @value=NULL;
+EXEC sp_set_session_context @key=N'Role', @value=NULL;
+BEGIN TRY
+    EXEC dbo.sp_GetDashboard @SessionUserId=@cm1;
+    INSERT #Results VALUES('SP-19', N'GetDashboard không phiên + UserId tùy ý bị chặn', 0, N'Không bị chặn (sai)');
+END TRY
+BEGIN CATCH
+    IF ERROR_NUMBER() = 50110
+        INSERT #Results VALUES('SP-19', N'GetDashboard không phiên + UserId tùy ý bị chặn', 1, N'Lỗi 50110');
+    ELSE
+        INSERT #Results VALUES('SP-19', N'GetDashboard không phiên + UserId tùy ý bị chặn', 0, N'Mã lỗi: ' + CAST(ERROR_NUMBER() AS VARCHAR(10)));
+END CATCH;
+
+-- ============================================================
+-- ============================================================
+-- SP-20: Booking management impersonation - session=customer1, truyền @SessionUserId=@mgr
+--        → sp_ApproveBooking phải bị chặn 50030 (không khớp phiên).
+-- ============================================================
+-- Tạo 1 booking PENDING bằng phiên đúng (customer1) để có target
+DECLARE @mgmtId UNIQUEIDENTIFIER = NEWID();
+EXEC dbo.sp_Login @Username=N'customer1', @Password=N'cus1pass';
+EXEC dbo.sp_BookCourt @UserId=@cus1, @CourtId=@c3, @StartTime=@D1_0900, @EndTime=@D1_1000,
+     @BookingId=@mgmtId OUTPUT, @TotalCost=@tc OUTPUT;
+BEGIN TRY
+    -- vẫn session=customer1 nhưng claim là manager
+    EXEC dbo.sp_ApproveBooking @SessionUserId=@mgr, @BookingId=@mgmtId;
+    INSERT #Results VALUES('SP-20', N'Approve impersonation (session=cus1, claim=mgr) bị chặn', 0, N'Không bị chặn (sai)');
+END TRY
+BEGIN CATCH
+    IF ERROR_NUMBER() = 50030
+        INSERT #Results VALUES('SP-20', N'Approve impersonation (session=cus1, claim=mgr) bị chặn', 1, N'Lỗi 50030');
+    ELSE
+        INSERT #Results VALUES('SP-20', N'Approve impersonation (session=cus1, claim=mgr) bị chặn', 0, N'Mã lỗi: ' + CAST(ERROR_NUMBER() AS VARCHAR(10)));
+END CATCH;
+
+-- SP-21: Session = customer1, truyền @SessionUserId=@cus2 → sp_CancelBooking 50050
+BEGIN TRY
+    EXEC dbo.sp_CancelBooking @SessionUserId=@cus2, @BookingId=@mgmtId;
+    INSERT #Results VALUES('SP-21', N'Cancel impersonation (session=cus1, claim=cus2) bị chặn', 0, N'Không bị chặn (sai)');
+END TRY
+BEGIN CATCH
+    IF ERROR_NUMBER() = 50050
+        INSERT #Results VALUES('SP-21', N'Cancel impersonation (session=cus1, claim=cus2) bị chặn', 1, N'Lỗi 50050');
+    ELSE
+        INSERT #Results VALUES('SP-21', N'Cancel impersonation (session=cus1, claim=cus2) bị chặn', 0, N'Mã lỗi: ' + CAST(ERROR_NUMBER() AS VARCHAR(10)));
+END CATCH;
+
+-- ============================================================
+-- SEC-01..05: chống giả mạo SESSION_CONTEXT (P0) — chạy dưới principal bcm_app
+-- Fix (08_security.sql): DENY EXECUTE ON sys.sp_set_session_context TO bcm_app
+-- ở master scope (login). bcm_app chỉ có context hợp lệ qua sp_Login.
+-- ============================================================
+
+-- ---- SEC-01/SEC-02: bcm_app tự gán UserId/Role → phải bị chặn CHÍNH XÁC mã 229
+-- (EXECUTE permission denied trên sys.sp_set_session_context) - không chỉ "có lỗi".
+-- Trạng thái: 0 = chưa rõ/lỗi khác, 1 = set THÀNH CÔNG (lỗ hổng), -1 = bị chặn 229.
+EXECUTE AS USER = N'bcm_app';
+DECLARE @sec1_state INT = 0, @sec1_msg NVARCHAR(300);
+DECLARE @sec2_state INT = 0, @sec2_msg NVARCHAR(300);
+BEGIN TRY
+    EXEC sys.sp_set_session_context @key=N'UserId', @value=@mgr;
+    SET @sec1_state = 1;
+END TRY
+BEGIN CATCH
+    IF ERROR_NUMBER() = 229
+        SET @sec1_state = -1;
+    SET @sec1_msg = ERROR_MESSAGE();
+END CATCH;
+BEGIN TRY
+    EXEC sys.sp_set_session_context @key=N'Role', @value=N'MANAGER';
+    SET @sec2_state = 1;
+END TRY
+BEGIN CATCH
+    IF ERROR_NUMBER() = 229
+        SET @sec2_state = -1;
+    SET @sec2_msg = ERROR_MESSAGE();
+END CATCH;
+REVERT;
+IF @sec1_state = -1
+    INSERT #Results VALUES('SEC-01', N'bcm_app tự gán SESSION_CONTEXT UserId bị chặn (giả mạo)', 1, N'EXECUTE permission denied (229) trên sp_set_session_context');
+ELSE IF @sec1_state = 1
+    INSERT #Results VALUES('SEC-01', N'bcm_app tự gán SESSION_CONTEXT UserId bị chặn (giả mạo)', 0, N'KHÔNG bị chặn - lỗ hổng còn hở');
+ELSE
+    INSERT #Results VALUES('SEC-01', N'bcm_app tự gán SESSION_CONTEXT UserId bị chặn (giả mạo)', 0, LEFT(ISNULL(@sec1_msg, N'Lỗi khác không phải 229'),250));
+IF @sec2_state = -1
+    INSERT #Results VALUES('SEC-02', N'bcm_app tự gán SESSION_CONTEXT Role bị chặn (giả mạo)', 1, N'EXECUTE permission denied (229) trên sp_set_session_context');
+ELSE IF @sec2_state = 1
+    INSERT #Results VALUES('SEC-02', N'bcm_app tự gán SESSION_CONTEXT Role bị chặn (giả mạo)', 0, N'KHÔNG bị chặn - lỗ hổng còn hở');
+ELSE
+    INSERT #Results VALUES('SEC-02', N'bcm_app tự gán SESSION_CONTEXT Role bị chặn (giả mạo)', 0, LEFT(ISNULL(@sec2_msg, N'Lỗi khác không phải 229'),250));
+
+-- ---- SEC-03: sp_Login dưới bcm_app vẫn tạo context hợp lệ (chỉ có qua SP này) ----
+EXECUTE AS USER = N'bcm_app';
+DECLARE @sec3_ok BIT = 0, @sec3_note NVARCHAR(300);
+BEGIN TRY
+    EXEC dbo.sp_Login @Username=N'manager', @Password=N'manager123';
+    IF CONVERT(UNIQUEIDENTIFIER, SESSION_CONTEXT(N'UserId')) = @mgr
+       AND CONVERT(VARCHAR(20), SESSION_CONTEXT(N'Role')) = N'MANAGER'
+        SET @sec3_ok = 1;
+END TRY
+BEGIN CATCH
+    SET @sec3_note = ERROR_MESSAGE();
+END CATCH;
+REVERT;
+IF @sec3_ok = 1
+    INSERT #Results VALUES('SEC-03', N'sp_Login (bcm_app) tạo context MANAGER hợp lệ', 1, N'UserId+Role đúng, SESSION_CONTEXT ENFORCED');
+ELSE
+    INSERT #Results VALUES('SEC-03', N'sp_Login (bcm_app) tạo context MANAGER hợp lệ', 0, ISNULL(@sec3_note, N'Context không khớp'));
+
+-- Xóa context (admin) để mô tả attacker chưa login trước khi approve
+EXEC sys.sp_set_session_context @key=N'UserId', @value=NULL;
+EXEC sys.sp_set_session_context @key=N'Role', @value=NULL;
+
+-- ---- SEC-04: giả mạo manager rồi approve → phải bị chặn (229 nếu không set được context; 50030/50031 nếu approve chạy) ----
+EXECUTE AS USER = N'bcm_app';
+DECLARE @sec4_ok BIT = 0, @sec4_err INT = 0, @sec4_msg NVARCHAR(300);
+BEGIN TRY
+    EXEC sys.sp_set_session_context @key=N'UserId', @value=@mgr;  -- phải fail (không thể giả)
+END TRY
+BEGIN CATCH
+    SET @sec4_err = ERROR_NUMBER();
+    SET @sec4_msg = ERROR_MESSAGE();
+END CATCH;
+IF @sec4_err = 0  -- set thành công (bất thường) → thử approve
+BEGIN
+    BEGIN TRY
+        EXEC dbo.sp_ApproveBooking @SessionUserId=@mgr, @BookingId=@mgmtId;
+        SET @sec4_ok = 1;
+    END TRY
+    BEGIN CATCH
+        SET @sec4_err = ERROR_NUMBER();
+        SET @sec4_msg = ERROR_MESSAGE();
+    END CATCH;
+END;
+REVERT;
+IF @sec4_err = 229
+    INSERT #Results VALUES('SEC-04', N'Approve w/o session (attacker giả manager) bị chặn', 1, N'Không set được context (229); approve không thể chạy với giả manager');
+ELSE IF @sec4_err IN (50030, 50031)
+    INSERT #Results VALUES('SEC-04', N'Approve w/o session (attacker giả manager) bị chặn', 1, N'Mã lỗi: ' + CAST(@sec4_err AS VARCHAR(10)));
+ELSE IF @sec4_ok = 1
+    INSERT #Results VALUES('SEC-04', N'Approve w/o session (attacker giả manager) bị chặn', 0, N'Approve không bị chặn');
+ELSE
+    INSERT #Results VALUES('SEC-04', N'Approve w/o session (attacker giả manager) bị chặn', 0, ISNULL(@sec4_msg, N'Lỗi không xác định'));
+
+-- ---- SEC-05: Guest browse sân trống vẫn public qua sp_GetAvailableCourts ----
+EXECUTE AS USER = N'bcm_app';
+DECLARE @sec5_cnt INT = 0, @sec5_msg NVARCHAR(300);
+DECLARE @freeD DATE = DATEADD(DAY, 20, CAST(GETDATE() AS DATE));
+DECLARE @sec5_s DATETIME2(0), @sec5_e DATETIME2(0);
+SET @sec5_s = CONVERT(DATETIME2(0), CONCAT(CONVERT(VARCHAR(10), @freeD, 23), ' 09:00:00'));
+SET @sec5_e = CONVERT(DATETIME2(0), CONCAT(CONVERT(VARCHAR(10), @freeD, 23), ' 10:00:00'));
+BEGIN TRY
+    DECLARE @sec5 TABLE (CourtId UNIQUEIDENTIFIER, CourtName NVARCHAR(100), Address NVARCHAR(255),
+                         SurfaceType NVARCHAR(20), SizeType NVARCHAR(20), PricePerHour DECIMAL(12,0),
+                         PricePerThreeHours DECIMAL(12,0), IsAvailable BIT);
+    INSERT INTO @sec5
+    EXEC dbo.sp_GetAvailableCourts @StartTime=@sec5_s, @EndTime=@sec5_e;
+    SELECT @sec5_cnt = COUNT(*) FROM @sec5;
+END TRY
+BEGIN CATCH
+    SET @sec5_msg = ERROR_MESSAGE();
+END CATCH;
+REVERT;
+IF @sec5_cnt > 0
+    INSERT #Results VALUES('SEC-05', N'Guest browse sp_GetAvailableCourts public (no session)', 1, N'Số sân trống: ' + CAST(@sec5_cnt AS VARCHAR(10)));
+ELSE
+    INSERT #Results VALUES('SEC-05', N'Guest browse sp_GetAvailableCourts public (no session)', 0, ISNULL(@sec5_msg, N'0 sân trống (sai)'));
 
 -- ============================================================
 -- SUMMARY

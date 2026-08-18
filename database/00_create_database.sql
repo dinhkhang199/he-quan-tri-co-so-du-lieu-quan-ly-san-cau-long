@@ -3,7 +3,12 @@
    Script : 00_create_database.sql
    Mục đích: Tạo database BadmintonCourtManagement từ rỗng (DB-01)
    Lưu ý  : Contract v2.0 - chỉ chạy T-SQL trên MS SQL Server
+   KNOWN-07 FIX: USE master trước khi drop/create để tránh lỗi
+   "cannot drop active database" khi connection đang ở DB này.
    ============================================================ */
+
+USE master;
+GO
 
 IF DB_ID(N'BadmintonCourtManagement') IS NOT NULL
 BEGIN

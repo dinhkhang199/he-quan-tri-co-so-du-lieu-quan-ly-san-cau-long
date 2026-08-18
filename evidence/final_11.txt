@@ -1,0 +1,35 @@
+Changed database context to 'BadmintonCourtManagement'.
+ Đã sẵn sàng 2 PENDING overlap (b4, b9).
+UserId                               Username                                           Role                 IsActive LastLogin
+------------------------------------ -------------------------------------------------- -------------------- -------- --------------------------------------
+A1000001-0000-0000-0000-000000000001 manager                                            MANAGER                     1                    2026-08-18 10:36:48
+ Manager đã login (SESSION_CONTEXT sẵn sàng).
+ >>> Đã sẵn sàng. Chờ Window B (script 12) báo CC01_B_READY (tối đa 30s)... <<<
+ Bắt đầu approve b4...
+CourtId
+------------------------------------
+C1000001-0000-0000-0000-000000000001
+ b4 approve bị từ chối: Không thể approve: booking overlap với một BOOKED khác trên cùng sân.
+BookedCount_on_slot
+-------------------
+                  1
+BookingId                            Status
+------------------------------------ --------------------
+B1000001-0000-0000-0000-000000000004 PENDING
+B1000001-0000-0000-0000-000000000009 BOOKED
+ ASSERTION PASS: BookedCount_on_slot <= 1 (không tạo 2 BOOKED overlap).
+
+ Bắt đầu: sẽ giữ khóa C5, nhiều nhất 1 khóa UPDATE tồn tại.
+UserId                               Username                                           Role                 IsActive LastLogin
+------------------------------------ -------------------------------------------------- -------------------- -------- --------------------------------------
+A1000001-0000-0000-0000-000000000001 manager                                            MANAGER                     1                    2026-08-18 10:36:51
+ Đã update C5=150000 (khóa đang giữ). Báo A_HOLD; chờ B báo CC02_B_READY...
+ Commit xong (nhả khóa). B sẽ ghi tiếp 120000 sau khi hết block.
+FinalPrice_C5
+--------------
+        120000
+ ASSERTION PASS: giá cuối = 120000 (UPDATE của B không bị lost).
+
+ Đã reset PricePerHour C5 về 100.000 (baseline).
+ Đã dọn bảng cờ _CCTestSync.
+--- Hết 11_tests_concurrency_session_A.sql. Xem assertion PASS/FAIL ở trên. ---
