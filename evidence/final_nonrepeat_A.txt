@@ -1,0 +1,10 @@
+Changed database context to 'BadmintonCourtManagement'.
+ ==== PHASE UNSAFE ==== Baseline PricePerHour C5 = 100.000
+ Lần đọc 1 (trong tran): 100000
+ Lần đọc 2 (trong tran): 120000
+ >>> CÙNG 1 dòng C5, 2 lần đọc KHÁC nhau (100000 → 120000) → NON-REPEATABLE READ.
+ ==== PHASE FIXED ==== Baseline PricePerHour C5 = 100.000
+ FIXED lần đọc 1 (giữ S-lock C5 tới hết tran): 100000
+ FIXED lần đọc 2: 100000
+ >>> Khóa chia sẻ giữ tới hết tran → 2 lần đọc GIỐNG nhau → NON-REPEATABLE READ bị ngăn.
+ Cleanup xong: PricePerHour C5 trở về 100.000.

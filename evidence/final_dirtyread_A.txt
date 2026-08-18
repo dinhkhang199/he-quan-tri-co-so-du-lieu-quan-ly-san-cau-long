@@ -1,0 +1,13 @@
+Changed database context to 'BadmintonCourtManagement'.
+ ==== PHASE UNSAFE ==== Baseline PricePerHour C5 = 100.000
+ Đã UPDATE PricePerHour = 200.000 (CHƯA COMMIT). Cờ đã báo → B sẽ đọc được giá dirty này.
+ B đã đọc 200.000 dù chưa commit → mình ROLLBACK để phơi bày dữ liệu dirty.
+ Đã ROLLBACK: giá 200.000 chưa từng tồn tại thật, nay biến mất → đó là DIRTY READ.
+FinalPrice_C5
+--------------
+        100000
+ ==== PHASE FIXED ==== Baseline PricePerHour C5 = 100.000
+ Đã UPDATE PricePerHour = 200.000 (CHƯA COMMIT). Chờ B (READ COMMITTED) chạy tới SELECT và bị BLOCK.
+ B đang bị khóa (không đọc được 200.000). Mình ROLLBACK để nhả block cho B đọc giá đã commit.
+ >>> B đọc được giá ĐÃ COMMIT (100.000) chứ không phải 200.000 dirty → DIRTY READ bị ngăn.
+ Cleanup xong: PricePerHour C5 trở về 100.000.

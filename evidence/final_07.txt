@@ -1,0 +1,2 @@
+Changed database context to 'BadmintonCourtManagement'.
+ 6 Triggers đã được tạo.

@@ -1,0 +1,2 @@
+Changed database context to 'BadmintonCourtManagement'.
+ 2 Functions đã được tạo.

@@ -1,0 +1,2 @@
+Changed database context to 'BadmintonCourtManagement'.
+ 4 Views đã được tạo.

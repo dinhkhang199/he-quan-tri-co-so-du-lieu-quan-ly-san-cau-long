@@ -1,0 +1,6 @@
+Changed database context to 'BadmintonCourtManagement'.
+ ==== PHASE UNSAFE ====
+ Đã UPDATE + COMMIT C5 = 120.000 ngay giữa 2 lần đọc của A.
+ ==== PHASE FIXED ====
+ UPDATE C5 = 120.000 → nếu A đang REPEATABLE READ (giữ S-lock), lệnh này BỊ BLOCKED tới khi A kết thúc tran...
+ Hết block → C5 = 120.000 đã commit KHÔNG thay đổi trong lúc A đang đọc → NON-REPEATABLE READ bị ngăn.

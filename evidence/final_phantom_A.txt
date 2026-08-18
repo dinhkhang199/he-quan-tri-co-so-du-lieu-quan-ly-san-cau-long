@@ -1,0 +1,10 @@
+Changed database context to 'BadmintonCourtManagement'.
+ ==== PHASE UNSAFE (READ COMMITTED) ====
+ Lần đọc 1 (COUNT): 0
+ Lần đọc 2 (COUNT): 1
+ >>> Tập kết quả TĂNG THÊM ROW sau commit của B → PHANTOM READ: 0 → 1.
+ ==== PHASE FIXED (SERIALIZABLE) ====
+ FIXED lần đọc 1 (COUNT): 0
+ FIXED lần đọc 2 (COUNT): 0
+ >>> SERIALIZABLE: range lock giữ predicate ổn định (f1 = f2) → PHANTOM bị ngăn.
+ Cleanup hoàn tất (sentinel B0000A00-...-0001/0002): Notifications → ActivityLogs → Bookings.

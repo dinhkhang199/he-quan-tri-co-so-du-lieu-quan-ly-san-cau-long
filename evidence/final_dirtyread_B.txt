@@ -1,0 +1,8 @@
+Changed database context to 'BadmintonCourtManagement'.
+ ==== PHASE UNSAFE (READ UNCOMMITTED) ====
+ Đọc được PricePerHour = 200000 — DÙ A CHƯA COMMIT.
+ Nếu đọc được 200.000 mà A sau đó rollback → DIRTY READ (đọc dữ liệu chưa commit).
+ ==== PHASE FIXED (READ COMMITTED) ====
+ SELECT (READ COMMITTED) → nếu A còn giữ UPDATE chưa commit, lệnh này BỊ BLOCK tới khi A kết thúc tran, không đọc được 200.000 dirty.
+ Hết block. Giá đọc được (đã commit) = 100000.
+ Không đọc được 200.000 chưa commit → DIRTY READ bị ngăn (READ COMMITTED mặc định).

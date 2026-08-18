@@ -1,0 +1,7 @@
+Changed database context to 'BadmintonCourtManagement'.
+ B đã giữ UPDLOCK sân. A gọi sp_BookCourt (phải bị chặn khóa, rồi reject sau khi B deactivate+commit)...
+UserId                               Username                                           Role                 IsActive LastLogin
+------------------------------------ -------------------------------------------------- -------------------- -------- --------------------------------------
+A1000001-0000-0000-0000-000000000004 customer1                                          CUSTOMER                    1                    2026-08-18 10:37:30
+ sp_BookCourt bị từ chối 50013 (sân inactive) sau khi B deactivate+commit - TOCTOU FIX hoạt động.
+ ASSERTION PASS: court inactive (IsActive=0) và KHÔNG có PENDING mới trên khung D2[07-08] - không TOCTOU.

@@ -1,0 +1,6 @@
+Changed database context to 'BadmintonCourtManagement'.
+Changed database context to 'master'.
+ Security (master): DENY EXECUTE sys.sp_set_session_context TO bcm_app.
+Changed database context to 'BadmintonCourtManagement'.
+ Security: bcm_app kh?´ng thá»ƒ tá»± set SESSION_CONTEXT (DENY sys.sp_set_session_context, master scope).
+ Security: bcm_app chá»‰ thao t?¡c qua Stored Procedure; DENY DML trá»±c tiáº¿p l?ªn báº£ng l?µi.
