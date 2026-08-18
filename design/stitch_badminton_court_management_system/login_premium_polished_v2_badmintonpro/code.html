@@ -1,0 +1,387 @@
+<!DOCTYPE html><html lang="vi"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Đăng nhập - BadmintonPro</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800;900&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            200: '#99f6e4',
+                            300: '#5eead4',
+                            400: '#2dd4bf',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            700: '#00796F', // Deep Teal
+                            800: '#115e59',
+                            900: '#134e4a',
+                            950: '#042f2e',
+                        },
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed": "#e0e3e5",
+                        "on-error": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "surface-dim": "#d6dbd9",
+                        "outline-variant": "#bcc9c6",
+                        "primary-fixed": "#89f5e7",
+                        "tertiary-fixed-dim": "#c4c7c9",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed": "#131b2e",
+                        "inverse-primary": "#6bd8cb",
+                        "secondary-fixed": "#dae2fd",
+                        "surface-container": "#eaefed",
+                        "secondary": "#565e74",
+                        "primary-fixed-dim": "#6bd8cb",
+                        "secondary-fixed-dim": "#bec6e0",
+                        "on-surface": "#171d1c",
+                        "background": "#f8fafc", // Soft background
+                        "on-surface-variant": "#475569",
+                        "surface-tint": "#006a61",
+                        "surface-bright": "#f5faf8",
+                        "on-primary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "secondary-container": "#dae2fd",
+                        "outline": "#64748b",
+                        "on-primary-fixed-variant": "#005049",
+                        "on-background": "#0f172a",
+                        "on-tertiary-fixed": "#191c1e",
+                        "on-secondary-container": "#5c647a",
+                        "tertiary-container": "#727577",
+                        "on-primary-fixed": "#00201d",
+                        "primary-container": "#008378",
+                        "surface-container-highest": "#e2e8f0",
+                        "inverse-on-surface": "#edf2f0",
+                        "surface": "#ffffff",
+                        "on-tertiary-fixed-variant": "#444749",
+                        "primary": "#00796F", // Deep Teal
+                        "inverse-surface": "#2c3130",
+                        "surface-variant": "#f1f5f9",
+                        "on-secondary-fixed-variant": "#3f465c",
+                        "on-primary-container": "#f4fffc",
+                        "on-secondary": "#ffffff",
+                        "error": "#ef4444",
+                        "on-tertiary-container": "#fbfdff",
+                        "tertiary": "#595c5e",
+                        "surface-container-low": "#f8fafc",
+                        "surface-container-high": "#e4e9e7"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "1.125rem", // 18px
+                        "2xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "md": "1.5rem",
+                        "lg": "2rem",
+                        "sm": "1rem",
+                        "base": "4px",
+                        "gutter": "1.5rem",
+                        "xl": "3rem",
+                        "container-padding": "2rem",
+                        "xs": "0.5rem"
+                    },
+                    fontFamily: {
+                        "sans": ["Hanken Grotesk", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"]
+                    },
+                    boxShadow: {
+                        'premium': '0 10px 40px -10px rgba(0, 121, 111, 0.08), 0 1px 3px rgba(0,0,0,0.05)',
+                        'glass': '0 4px 30px rgba(0, 0, 0, 0.1)',
+                    },
+                    animation: {
+                        'float': 'float 7s ease-in-out infinite',
+                        'float-delayed-1': 'float 8s ease-in-out infinite 1s',
+                        'float-delayed-2': 'float 9s ease-in-out infinite 2s',
+                        'subtle-zoom': 'subtleZoom 16s ease-in-out infinite alternate',
+                        'fade-in': 'fadeIn 1s ease-out forwards',
+                        'slide-up': 'slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-15px)' },
+                        },
+                        subtleZoom: {
+                            '0%': { transform: 'scale(1.02) translate(0%, 0%)' },
+                            '100%': { transform: 'scale(1.05) translate(-1%, -1%)' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Hanken Grotesk', sans-serif;
+            background-color: #f8fafc;
+        }
+
+        /* Prevent layout shift from error messages */
+        .error-container {
+            min-height: 24px; /* Space for single line error */
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .error-container.show {
+            opacity: 1;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .glass-chip {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .court-perspective {
+            position: absolute;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.05) 2px, transparent 2px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.05) 2px, transparent 2px);
+            background-size: 60px 60px;
+            transform: perspective(1000px) rotateX(60deg) scale(2);
+            transform-origin: bottom center;
+            mask-image: linear-gradient(to top, black, transparent 80%);
+            -webkit-mask-image: linear-gradient(to top, black, transparent 80%);
+            z-index: 1;
+            pointer-events: none;
+        }
+        
+        .hero-bg-overlay {
+            background: linear-gradient(135deg, rgba(0, 32, 29, 0.6) 0%, rgba(0, 121, 111, 0.2) 100%);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .animate-float, .animate-float-delayed-1, .animate-float-delayed-2, .animate-subtle-zoom, .animate-fade-in, .animate-slide-up {
+                animation: none !important;
+                transform: none !important;
+                opacity: 1 !important;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen antialiased text-on-background relative overflow-hidden flex flex-col md:flex-row">
+<!-- Left Visual Area (55%) -->
+<div class="relative w-full md:w-[55%] h-64 md:h-screen flex-shrink-0 overflow-hidden animate-fade-in order-2 md:order-1 hidden md:block">
+<!-- Hero Background Image -->
+<img alt="Premium 3D abstract badminton shuttlecock" class="absolute inset-0 w-full h-full object-cover object-center animate-subtle-zoom brightness-110" src="https://lh3.googleusercontent.com/aida/AP1WRLsML1mvB3hOTTJEdu0orNO4LgCnOXPZP4FvCJ1VotJqB4AfkK9TZcyvPoj4DpT6VYNWAZRVi1egtHmHsHYpnfT1vxYkGP35bjz8QZo8mL8C1QjoY5WFVXJYxIrABe0DAVqj2ajUsv9FG3U9uaF5iekBjh6Z4kuqRB1rtgA1J-akS6SPyNVYJpmjsthW0Fdh2Vw9tLkp8t1pvqNviSkkp41I2hn2L0_vK-T35tUFl0821OUEW0rjspBF5o8">
+<!-- Gradient Overlay -->
+<div class="absolute inset-0 hero-bg-overlay mix-blend-multiply"></div>
+<!-- Abstract Court Lines Perspective -->
+<div class="court-perspective"></div>
+<!-- Content Overlay -->
+<div class="absolute inset-0 p-12 flex flex-col justify-end z-10">
+<!-- Floating Glass Chips -->
+<div class="relative w-full h-full pointer-events-none hidden lg:block">
+<div class="absolute top-1/4 right-1/4 glass-chip px-4 py-2 rounded-full text-white text-sm font-medium animate-float flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">calendar_month</span> Quản lý lịch sân
+            </div>
+<div class="absolute top-1/3 left-1/4 glass-chip px-4 py-2 rounded-full text-white text-sm font-medium animate-float-delayed-1 flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">flash_on</span> Đặt sân nhanh chóng
+            </div>
+<div class="absolute bottom-1/3 right-1/3 glass-chip px-4 py-2 rounded-full text-white text-sm font-medium animate-float-delayed-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">schedule</span> 06:00 — 22:00
+            </div>
+</div>
+<div class="glass-panel p-6 rounded-2xl max-w-md">
+<h1 class="text-3xl lg:text-4xl font-bold text-white tracking-tight mb-3 leading-tight">Quản lý sân thông minh.<br>Vận hành dễ dàng.</h1>
+<p class="text-base text-white/80 font-medium">Theo dõi lịch sân, booking và hoạt động trên một hệ thống duy nhất.</p>
+</div>
+</div>
+</div>
+<!-- Right Login Area (45%) -->
+<div class="w-full md:w-[45%] min-h-screen flex flex-col justify-center bg-surface-container-low relative z-20 order-1 md:order-2 px-6 py-12 md:px-12 lg:px-20 overflow-y-auto">
+<!-- Mobile Visual Header (Only visible on small screens) -->
+<div class="md:hidden w-full h-48 rounded-xl overflow-hidden relative mb-8 animate-fade-in">
+<img alt="Badminton Background" class="absolute inset-0 w-full h-full object-cover brightness-110" src="https://lh3.googleusercontent.com/aida/AP1WRLsML1mvB3hOTTJEdu0orNO4LgCnOXPZP4FvCJ1VotJqB4AfkK9TZcyvPoj4DpT6VYNWAZRVi1egtHmHsHYpnfT1vxYkGP35bjz8QZo8mL8C1QjoY5WFVXJYxIrABe0DAVqj2ajUsv9FG3U9uaF5iekBjh6Z4kuqRB1rtgA1J-akS6SPyNVYJpmjsthW0Fdh2Vw9tLkp8t1pvqNviSkkp41I2hn2L0_vK-T35tUFl0821OUEW0rjspBF5o8">
+<div class="absolute inset-0 hero-bg-overlay mix-blend-multiply"></div>
+<div class="absolute bottom-4 left-4 right-4">
+<h1 class="text-2xl font-bold text-white tracking-tight leading-tight">Quản lý sân thông minh.</h1>
+</div>
+</div>
+<!-- Login Container -->
+<div class="w-full max-w-[480px] mx-auto animate-slide-up bg-surface border border-surface-container-highest shadow-sm p-8 sm:p-12 rounded-2xl" style="animation-delay: 0.2s; opacity: 0;">
+<!-- Brand Header -->
+<div class="mb-10 text-center md:text-left">
+<div class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-brand-50 text-brand-700 mb-4 shadow-sm border border-brand-100 p-2">
+<img alt="BadmintonPro Logo" class="w-full h-full text-brand-700 object-contain" src="https://lh3.googleusercontent.com/aida/AP1WRLslHK6A7h4CWS_598zXVghPMjGRP2qS-JxjdFJsQ4i89aUencbrL2NTibTmSN7uCRnSHjEspt-texZPz5CrTsLQqkH2zkqV8qaNqg2w2bE3xk6bdSGPz93Qk4Qi62WIl7XZnn4lWMLcDxp7NgWPHtD-qsrtLnSztB_5V9qQdK_76ZgCVQn9SzytGD1qO4zyaO6OYGZFW-ZGytVz6KpC-Y70Nd8yCO9o16iOjz2pJ0u4hb6CD1wY5ulUasQ">
+</div>
+<h2 class="text-3xl font-bold text-on-background tracking-tight">BadmintonPro</h2>
+<p class="text-base text-on-surface-variant mt-1 font-medium">Hệ thống quản lý sân cầu lông</p>
+</div>
+<!-- Login Form -->
+<div class="bg-surface rounded-xl p-0 relative" id="login-container">
+<form class="space-y-5" id="login-form">
+<!-- Username -->
+<div>
+<label class="block text-sm font-semibold tracking-wide text-on-surface-variant mb-1.5 uppercase" for="username">Tên đăng nhập</label>
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-brand-700 transition-colors">person</span>
+<input class="w-full pl-11 pr-4 py-3 bg-surface border border-surface-container-highest rounded-xl text-on-surface focus:border-brand-700 focus:ring-4 focus:ring-brand-700/10 text-base placeholder:text-outline-variant transition-all hover:border-outline-variant" id="username" name="username" placeholder="Nhập tên đăng nhập" type="text" value="">
+</div>
+</div>
+<!-- Password -->
+<div>
+<div class="flex items-center mb-1.5">
+<label class="block text-sm font-semibold tracking-wide text-on-surface-variant uppercase" for="password">Mật khẩu</label>
+</div>
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-brand-700 transition-colors">lock</span>
+<input class="w-full pl-11 pr-11 py-3 bg-surface border border-surface-container-highest rounded-xl text-on-surface focus:border-brand-700 focus:ring-4 focus:ring-brand-700/10 text-base placeholder:text-outline-variant transition-all hover:border-outline-variant" id="password" name="password" placeholder="••••••••" type="password" value="">
+<button class="absolute right-4 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface transition-colors focus:outline-none" type="button">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+</div>
+</div>
+<!-- Error Message Area -->
+<div class="error-container flex items-start gap-2 text-error mt-2" id="error-message">
+<span class="material-symbols-outlined text-[20px] shrink-0 mt-0.5" id="error-icon">error</span>
+<span class="text-sm font-medium leading-tight" id="error-text"></span>
+</div>
+<!-- Submit Button -->
+<button class="w-full bg-brand-700 text-white py-3.5 rounded-xl font-semibold text-base hover:bg-brand-800 transition-all active:scale-[0.99] hover:-translate-y-0.5 shadow-sm hover:shadow-md flex items-center justify-center gap-2 relative overflow-hidden group mt-6" id="submit-btn" type="submit">
+<span id="btn-text">Đăng nhập</span>
+<span class="material-symbols-outlined text-[20px] group-hover:translate-x-1.5 transition-transform" id="btn-icon">arrow_forward</span>
+<!-- Loading Spinner -->
+<svg class="hidden animate-spin h-5 w-5 text-white absolute" fill="none" id="btn-spinner" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+<path class="opacity-75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" fill="currentColor"></path>
+</svg>
+</button>
+</form>
+<!-- Server Error Overlay (Hidden by default) -->
+<div class="hidden absolute inset-0 bg-surface/95 backdrop-blur-md z-20 flex flex-col items-center justify-center p-8 text-center rounded-xl border border-surface-container-highest" id="server-overlay">
+<div class="w-16 h-16 rounded-full bg-error/10 flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-error text-3xl">cloud_off</span>
+</div>
+<h3 class="text-lg font-bold text-on-background mb-2">Lỗi kết nối máy chủ</h3>
+<p class="text-sm text-on-surface-variant mb-6">Không thể kết nối đến hệ thống. Vui lòng thử lại sau.</p>
+<button class="px-6 py-2.5 bg-surface border border-surface-container-highest text-on-background rounded-xl font-semibold hover:bg-surface-variant transition-colors" onclick="resetState()" type="button">
+                    Thử lại
+                </button>
+</div>
+</div>
+<!-- Guest Link -->
+<div class="mt-8 text-center md:text-left w-full">
+<a class="inline-flex items-center gap-1.5 text-brand-700 hover:text-brand-800 font-medium transition-colors group" href="#">
+<span>Tiếp tục với tư cách khách</span>
+<span class="material-symbols-outlined text-[18px] group-hover:translate-x-1.5 transition-transform">arrow_forward</span>
+</a>
+</div>
+<!-- Dev State Controls -->
+<div class="hidden mt-16 flex flex-wrap gap-2 justify-center md:justify-start opacity-20 hover:opacity-100 transition-opacity">
+<button class="text-xs px-3 py-1.5 bg-surface border border-surface-container-highest text-on-surface-variant rounded-md shadow-sm hover:bg-surface-variant" onclick="setState('default')">Default</button>
+<button class="text-xs px-3 py-1.5 bg-surface border border-surface-container-highest text-on-surface-variant rounded-md shadow-sm hover:bg-surface-variant" onclick="setState('loading')">Loading</button>
+<button class="text-xs px-3 py-1.5 bg-surface border border-surface-container-highest text-on-surface-variant rounded-md shadow-sm hover:bg-surface-variant" onclick="setState('wrong_info')">Sai thông tin</button>
+<button class="text-xs px-3 py-1.5 bg-surface border border-surface-container-highest text-on-surface-variant rounded-md shadow-sm hover:bg-surface-variant" onclick="setState('disabled')">Bị vô hiệu hóa</button>
+<button class="text-xs px-3 py-1.5 bg-surface border border-surface-container-highest text-on-surface-variant rounded-md shadow-sm hover:bg-surface-variant" onclick="setState('conflict')">Xung đột DB</button>
+<button class="text-xs px-3 py-1.5 bg-surface border border-surface-container-highest text-on-surface-variant rounded-md shadow-sm hover:bg-surface-variant" onclick="setState('server_error')">Lỗi Server</button>
+</div>
+</div>
+</div>
+<script>
+        // UI State Management for Demonstration
+        const form = document.getElementById('login-form');
+        const submitBtn = document.getElementById('submit-btn');
+        const btnText = document.getElementById('btn-text');
+        const btnIcon = document.getElementById('btn-icon');
+        const btnSpinner = document.getElementById('btn-spinner');
+        const errorArea = document.getElementById('error-message');
+        const errorText = document.getElementById('error-text');
+        const serverOverlay = document.getElementById('server-overlay');
+        const inputs = document.querySelectorAll('input');
+
+        function resetState() {
+            // Reset Button
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('opacity-90', 'cursor-not-allowed');
+            btnText.classList.remove('invisible');
+            btnIcon.classList.remove('invisible');
+            btnSpinner.classList.add('hidden');
+            
+            // Reset Error
+            errorArea.classList.remove('show');
+            setTimeout(() => { errorText.textContent = ""; }, 200); // Clear text after fade
+            
+            inputs.forEach(input => {
+                input.classList.remove('border-error', 'focus:border-error', 'focus:ring-error/20');
+                input.classList.add('border-surface-container-highest', 'focus:border-brand-700', 'focus:ring-brand-700/10');
+            });
+
+            // Reset Overlay
+            serverOverlay.classList.add('hidden');
+        }
+
+        function setState(state) {
+            resetState();
+
+            switch(state) {
+                case 'loading':
+                    submitBtn.disabled = true;
+                    submitBtn.classList.add('opacity-90', 'cursor-not-allowed');
+                    btnText.classList.add('invisible');
+                    btnIcon.classList.add('invisible');
+                    btnSpinner.classList.remove('hidden');
+                    break;
+                case 'wrong_info':
+                    errorText.textContent = "Tên đăng nhập hoặc mật khẩu không chính xác.";
+                    errorArea.classList.add('show');
+                    inputs.forEach(input => {
+                        input.classList.remove('border-surface-container-highest', 'focus:border-brand-700', 'focus:ring-brand-700/10');
+                        input.classList.add('border-error', 'focus:border-error', 'focus:ring-error/20');
+                    });
+                    break;
+                case 'disabled':
+                    errorText.textContent = "Tài khoản đã bị vô hiệu hóa. Vui lòng liên hệ quản trị viên.";
+                    errorArea.classList.add('show');
+                    break;
+                case 'conflict':
+                    errorText.textContent = "Giao dịch đang xung đột với một thao tác khác. Vui lòng thử lại.";
+                    errorArea.classList.add('show');
+                    break;
+                case 'server_error':
+                    serverOverlay.classList.remove('hidden');
+                    break;
+            }
+        }
+
+        // Demo form submission
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            setState('loading');
+            
+            // Simulate network request
+            setTimeout(() => {
+                const states = ['wrong_info', 'disabled', 'conflict', 'server_error'];
+                const randomState = states[Math.floor(Math.random() * states.length)];
+                setState(randomState);
+            }, 1000);
+        });
+    </script>
+</body></html>

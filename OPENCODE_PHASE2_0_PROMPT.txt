@@ -1,0 +1,68 @@
+You are starting Phase 2.0 of BadmintonCourtManagement.
+
+DO NOT IMPLEMENT BUSINESS FEATURES YET.
+DO NOT MODIFY THE PHASE 1 DATABASE TO MAKE APP CODING EASIER.
+
+Repository source of truth: current project repository.
+Locked UI source: stitch_badminton_court_management_system export.
+
+BEFORE DOING ANY WORK:
+1. Read AGENTS.md completely.
+2. Read docs/PHASE2_CONTEXT.md completely.
+3. Read docs/UI_SCREEN_MAP.md completely.
+4. Read docs/IMPLEMENTATION_PLAN.md completely.
+5. Read README.md.
+6. Inspect database/01_tables_constraints.sql, database/05_views.sql, database/06_procedures.sql, database/07_triggers.sql, database/08_security.sql.
+7. Inspect the Stitch DESIGN.md and representative locked code.html files.
+
+Your task in this phase is architecture + bootstrap only.
+
+A. Audit
+- Summarize the existing repo and verify Phase 1 SQL/test assets are already present.
+- Detect available local runtimes/toolchains.
+- Confirm that the course/contract locks SQL Server + T-SQL but does not mandate a client framework.
+
+B. Architecture proposal
+Propose ONE minimal stack suitable for a university demo and this locked web UI.
+The proposal must explain:
+- frontend framework/runtime
+- backend/data-access layer
+- SQL Server driver
+- routing
+- auth/app-session model
+- configuration/secrets
+- how Stored Procedures will be called
+- critically: how SQL SESSION_CONTEXT established by sp_Login will be preserved or safely re-established for protected procedure calls when connection pooling is involved
+- why the design does not trust browser UserId/Role for authorization
+
+Do not proceed with an architecture that breaks SESSION_CONTEXT semantics.
+If more than one valid session strategy exists, briefly compare them and choose one.
+
+C. Bootstrap after proposal
+Only after the architecture is internally consistent:
+- create app/ skeleton
+- add dependency manifests
+- add config template without real secrets
+- add .gitignore entries if needed
+- create a minimal start/health page
+- create basic folder boundaries for UI, server/data access and shared types as appropriate
+- add run/build/lint commands
+- do NOT implement sp_Login or any business screen in this phase
+- do NOT copy mock JavaScript behavior from Stitch
+
+D. Protection
+- database/, tests/, evidence/ must remain unchanged.
+- Do not add payment, membership, ratings, CRM, maintenance, settings, registration, forgot-password or other out-of-scope modules.
+- Do not introduce a generic ADMIN application role.
+
+E. Verification
+Run the available build/lint/start checks.
+Then report:
+1. architecture chosen and session-context strategy
+2. files created/changed
+3. commands executed and results
+4. `git status --short`
+5. `git diff --stat`
+6. any risks/blockers
+
+STOP after Phase 2.0. Do not start authentication until reviewed.

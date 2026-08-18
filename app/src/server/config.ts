@@ -1,0 +1,42 @@
+/**
+ * Server configuration.
+ * Secrets are read from process.env (loaded from app/.env in dev; see .env.example).
+ * No real secrets are committed.
+ */
+
+export interface AppConfig {
+  dbServer: string;
+  dbDatabase: string;
+  dbUser: string;
+  dbPassword: string;
+  dbTrustServerCertificate: boolean;
+  dbPoolMax: number;
+  dbConnectTimeoutMs: number;
+  sessionSecret: string;
+  port: number;
+  isProd: boolean;
+}
+
+/** Read one env value with a required check (config template prohibits committed secrets). */
+function required(name: string): string {
+  const value = process.env[name];
+  if (!value || value.startsWith('__CHANGE_ME')) {
+    throw new Error(`Missing config: ${name}. Copy app/.env.example to app/.env and fill it.`);
+  }
+  return value;
+}
+
+export function loadConfig(): AppConfig {
+  return {
+    dbServer: process.env.DB_SERVER ?? 'localhost\\SQLEXPRESS',
+    dbDatabase: process.env.DB_DATABASE ?? 'BadmintonCourtManagement',
+    dbUser: required('DB_USER'),
+    dbPassword: required('DB_PASSWORD'),
+    dbTrustServerCertificate: (process.env.DB_TRUST_SERVER_CERTIFICATE ?? 'true') === 'true',
+    dbPoolMax: Number(process.env.DB_CONNECTION_POOL_MAX ?? 10),
+    dbConnectTimeoutMs: Number(process.env.DB_CONNECT_TIMEOUT_MS ?? 5000),
+    sessionSecret: required('SESSION_SECRET'),
+    port: Number(process.env.APP_PORT ?? 3000),
+    isProd: process.env.NODE_ENV === 'production',
+  };
+}

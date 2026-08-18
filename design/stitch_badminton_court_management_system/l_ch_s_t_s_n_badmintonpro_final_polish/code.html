@@ -1,0 +1,399 @@
+<!DOCTYPE html><html lang="vi"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Lịch sử đặt sân - BadmintonPro</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "on-error": "#ffffff",
+                "surface-container-lowest": "#ffffff",
+                "outline": "#6d7a77",
+                "primary-fixed-dim": "#6bd8cb",
+                "on-error-container": "#93000a",
+                "tertiary-fixed": "#e0e3e5",
+                "on-secondary-fixed-variant": "#3f465c",
+                "on-secondary-container": "#5c647a",
+                "tertiary-fixed-dim": "#c4c7c9",
+                "inverse-surface": "#2c3130",
+                "surface-container-high": "#e4e9e7",
+                "on-surface": "#171d1c",
+                "surface-container": "#eaefed",
+                "primary-fixed": "#89f5e7",
+                "surface-dim": "#d6dbd9",
+                "tertiary-container": "#727577",
+                "error": "#ba1a1a",
+                "on-surface-variant": "#3d4947",
+                "on-background": "#171d1c",
+                "on-secondary": "#ffffff",
+                "primary-container": "#008378",
+                "on-secondary-fixed": "#131b2e",
+                "on-tertiary-fixed-variant": "#444749",
+                "on-tertiary": "#ffffff",
+                "primary": "#00685f",
+                "surface-variant": "#dee4e1",
+                "outline-variant": "#bcc9c6",
+                "tertiary": "#595c5e",
+                "surface-tint": "#006a61",
+                "surface-container-low": "#f0f5f2",
+                "surface": "#f5faf8",
+                "on-primary": "#ffffff",
+                "on-primary-container": "#f4fffc",
+                "background": "#f5faf8",
+                "surface-bright": "#f5faf8",
+                "inverse-primary": "#6bd8cb",
+                "secondary-fixed": "#dae2fd",
+                "secondary-fixed-dim": "#bec6e0",
+                "surface-container-highest": "#dee4e1",
+                "on-primary-fixed": "#00201d",
+                "secondary": "#565e74",
+                "error-container": "#ffdad6",
+                "inverse-on-surface": "#edf2f0",
+                "on-tertiary-fixed": "#191c1e",
+                "on-tertiary-container": "#fbfdff",
+                "on-primary-fixed-variant": "#005049",
+                "secondary-container": "#dae2fd"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+        },
+        "spacing": {
+                "sm": "1rem",
+                "xs": "0.5rem",
+                "gutter": "1.5rem",
+                "xl": "3rem",
+                "base": "4px",
+                "container-padding": "2rem",
+                "md": "1.5rem",
+                "lg": "2rem"
+        },
+        "fontFamily": {
+                "label-sm": [
+                        "JetBrains Mono"
+                ],
+                "title-sm": [
+                        "Hanken Grotesk"
+                ],
+                "display-lg": [
+                        "Hanken Grotesk"
+                ],
+                "headline-lg-mobile": [
+                        "Hanken Grotesk"
+                ],
+                "headline-md": [
+                        "Hanken Grotesk"
+                ],
+                "body-md": [
+                        "Hanken Grotesk"
+                ]
+        },
+        "fontSize": {
+                "label-sm": [
+                        "13px",
+                        {
+                                "lineHeight": "16px",
+                                "letterSpacing": "0.05em",
+                                "fontWeight": "500"
+                        }
+                ],
+                "title-sm": [
+                        "18px",
+                        {
+                                "lineHeight": "24px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "display-lg": [
+                        "36px",
+                        {
+                                "lineHeight": "44px",
+                                "fontWeight": "700"
+                        }
+                ],
+                "headline-lg-mobile": [
+                        "28px",
+                        {
+                                "lineHeight": "36px",
+                                "fontWeight": "700"
+                        }
+                ],
+                "headline-md": [
+                        "24px",
+                        {
+                                "lineHeight": "32px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "body-md": [
+                        "16px",
+                        {
+                                "lineHeight": "24px",
+                                "fontWeight": "400"
+                        }
+                ]
+        }
+},
+    },
+  }
+</script>
+<style>
+        body { background-color: #f5faf8; }
+        .glass-card {
+            background: rgba(255, 255, 255, 1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            border-radius: 18px;
+        }
+        .shimmer {
+            background: linear-gradient(90deg, #f0f5f2 0%, #ffffff 50%, #f0f5f2 100%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen text-on-surface">
+<!-- TopNavBar Shell -->
+<header class="bg-surface-container-lowest/80 backdrop-blur-md dark:bg-background/80 flex justify-between items-center px-8 py-4 sticky top-0 z-50 w-full shadow-sm dark:shadow-none border-b border-outline-variant/20">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#00796F] text-3xl">sports_badminton</span>
+<span class="font-title-sm text-title-sm font-black text-on-surface">BadmintonPro</span>
+</div>
+<nav class="hidden md:flex gap-6 ml-8">
+<a class="text-on-surface-variant hover:text-[#00796F] transition-all font-body-md text-body-md" href="#">Tìm sân</a>
+<a class="text-[#00796F] border-b-2 border-[#00796F] pb-2 font-body-md text-body-md transition-transform duration-200" href="#">Lịch sử đặt</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-[#00796F] transition-all p-2 rounded-full hover:bg-surface-container"><span class="material-symbols-outlined">notifications</span></button>
+<button class="text-on-surface-variant hover:text-[#00796F] transition-all p-2 rounded-full hover:bg-surface-container"><span class="material-symbols-outlined">account_circle</span></button>
+</div>
+</header>
+<main class="flex-1 max-w-7xl mx-auto w-full px-[32px] py-12">
+<div class="flex flex-col gap-8">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+<div>
+<h1 class="font-display-lg text-display-lg text-on-surface">Lịch sử đặt sân</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-2">Quản lý và theo dõi các lượt đặt sân của bạn.</p>
+</div>
+<!-- Filters -->
+<div class="flex flex-wrap gap-4 items-center">
+<div class="relative">
+<select class="appearance-none bg-surface-container-lowest border border-outline-variant rounded-lg pl-4 pr-10 py-2 font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-[#00796F] focus:border-transparent">
+<option value="all">Tất cả trạng thái</option>
+<option value="pending">PENDING</option>
+<option value="booked">BOOKED</option>
+<option value="completed">COMPLETED</option>
+<option value="cancelled">CANCELLED</option>
+<option value="rejected">REJECTED</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline pointer-events-none">expand_more</span>
+</div>
+<div class="relative">
+<input class="bg-surface-container-lowest border border-outline-variant rounded-lg px-4 py-2 font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-[#00796F] focus:border-transparent" type="date">
+</div>
+<button class="bg-surface-container border border-outline-variant text-on-surface font-body-md text-body-md px-4 py-2 rounded-lg hover:bg-surface-variant transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]">filter_list</span> Lọc
+                    </button>
+</div>
+</div>
+<!-- Data Table Card -->
+<div class="glass-card overflow-hidden border border-outline-variant/30">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low border-b border-outline-variant/50">
+<th class="py-3 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Mã booking</th>
+<th class="py-3 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Sân</th>
+<th class="py-3 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Ngày</th>
+<th class="py-3 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Khung giờ</th>
+<th class="py-3 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-right">Tổng tiền</th>
+<th class="py-3 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Trạng thái</th>
+<th class="py-3 px-6 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-right">Thao tác</th>
+</tr>
+</thead>
+<tbody class="font-body-md text-body-md text-on-surface">
+<!-- Row 1: PENDING -->
+<tr class="border-b border-outline-variant/30 hover:bg-surface-container-low/50 transition-colors">
+<td class="py-4 px-6 font-label-sm">#BK-2026-001</td>
+<td class="py-4 px-6 font-title-sm">Sân Premium A1</td>
+<td class="py-4 px-6">18/08/2026</td>
+<td class="py-4 px-6">18:00 – 20:00</td>
+<td class="py-4 px-6 text-right font-label-sm">200.000đ</td>
+<td class="py-4 px-6">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#fef3c7] text-[#92400e] text-xs font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-[#92400e]"></span> PENDING
+                                    </div>
+</td>
+<td class="py-4 px-6 text-right">
+<button class="text-error hover:text-on-error-container font-label-sm flex items-center justify-end gap-1 w-full" onclick="showCancelModal('#BK-2026-001')">
+<span class="material-symbols-outlined text-[18px]">cancel</span> Hủy
+                                    </button>
+</td>
+</tr>
+<!-- Row 2: BOOKED -->
+<tr class="border-b border-outline-variant/30 hover:bg-surface-container-low/50 transition-colors">
+<td class="py-4 px-6 font-label-sm">#BK-2026-002</td>
+<td class="py-4 px-6 font-title-sm">Sân Cầu Lông Viettel Complex</td>
+<td class="py-4 px-6">19/08/2026</td>
+<td class="py-4 px-6">19:00 – 21:00</td>
+<td class="py-4 px-6 text-right font-label-sm">200.000đ</td>
+<td class="py-4 px-6">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#dbeafe] text-[#1e40af] text-xs font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-[#1e40af]"></span> BOOKED
+                                    </div>
+</td>
+<td class="py-4 px-6 text-right">
+<button class="text-error hover:text-on-error-container font-label-sm flex items-center justify-end gap-1 w-full" onclick="showCancelModal('#BK-2026-002')">
+<span class="material-symbols-outlined text-[18px]">cancel</span> Hủy
+                                    </button>
+</td>
+</tr>
+<!-- Row 3: COMPLETED -->
+<tr class="border-b border-outline-variant/30 hover:bg-surface-container-low/50 transition-colors">
+<td class="py-4 px-6 font-label-sm text-on-surface-variant">#BK-2026-003</td>
+<td class="py-4 px-6 text-on-surface-variant">Sân Cầu Lông Phú Thọ</td>
+<td class="py-4 px-6 text-on-surface-variant">17/08/2026</td>
+<td class="py-4 px-6 text-on-surface-variant">18:00 – 21:00</td>
+<td class="py-4 px-6 text-right font-label-sm text-on-surface-variant">270.000đ</td>
+<td class="py-4 px-6">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#d1fae5] text-[#065f46] text-xs font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-[#065f46]"></span> COMPLETED
+                                    </div>
+</td>
+<td class="py-4 px-6 text-right">
+<span class="text-outline-variant font-label-sm">—</span>
+</td>
+</tr>
+<!-- Row 4: CANCELLED -->
+<tr class="border-b border-outline-variant/30 hover:bg-surface-container-low/50 transition-colors bg-surface-container-low/20">
+<td class="py-4 px-6 font-label-sm text-on-surface-variant">#BK-2026-004</td>
+<td class="py-4 px-6 text-on-surface-variant">Sân Trung tâm A2</td>
+<td class="py-4 px-6 text-on-surface-variant">15/08/2026</td>
+<td class="py-4 px-6 text-on-surface-variant">16:00 – 18:00</td>
+<td class="py-4 px-6 text-right font-label-sm text-on-surface-variant">200.000đ</td>
+<td class="py-4 px-6">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-variant text-on-surface-variant text-xs font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-on-surface-variant"></span> CANCELLED
+                                    </div>
+</td>
+<td class="py-4 px-6 text-right">
+<span class="text-outline-variant font-label-sm">—</span>
+</td>
+</tr>
+<!-- Row 5: REJECTED -->
+<tr class="border-b border-outline-variant/30 hover:bg-surface-container-low/50 transition-colors bg-surface-container-low/20">
+<td class="py-4 px-6 font-label-sm text-on-surface-variant">#BK-2026-005</td>
+<td class="py-4 px-6 text-on-surface-variant">Sân Premium B1</td>
+<td class="py-4 px-6 text-on-surface-variant">14/08/2026</td>
+<td class="py-4 px-6 text-on-surface-variant">19:00 – 20:00</td>
+<td class="py-4 px-6 text-right font-label-sm text-on-surface-variant">100.000đ</td>
+<td class="py-4 px-6">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#ffe4e6] text-[#be123c] text-xs font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-[#be123c]"></span> REJECTED
+                                    </div>
+</td>
+<td class="py-4 px-6 text-right">
+<span class="text-outline-variant font-label-sm">—</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="bg-surface-container-lowest px-6 py-4 flex items-center justify-between border-t border-outline-variant/30 rounded-b-[18px]">
+<span class="text-sm text-on-surface-variant">Hiển thị 1 đến 5 trong 12 kết quả</span>
+<div class="flex items-center gap-2">
+<button class="p-2 rounded hover:bg-surface-container text-on-surface-variant disabled:opacity-50" disabled=""><span class="material-symbols-outlined">chevron_left</span></button>
+<button class="w-8 h-8 rounded bg-[#00796F] text-on-primary font-label-sm flex items-center justify-center">1</button>
+<button class="w-8 h-8 rounded hover:bg-surface-container text-on-surface font-label-sm flex items-center justify-center">2</button>
+<button class="w-8 h-8 rounded hover:bg-surface-container text-on-surface font-label-sm flex items-center justify-center">3</button>
+<button class="p-2 rounded hover:bg-surface-container text-on-surface-variant"><span class="material-symbols-outlined">chevron_right</span></button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Confirmation Modal -->
+<div class="hidden fixed inset-0 z-[100] flex items-center justify-center" id="cancel-modal">
+<div class="absolute inset-0 bg-secondary-fixed-variant/40 backdrop-blur-[2px]" onclick="document.getElementById('cancel-modal').classList.add('hidden')"></div>
+<div class="bg-surface-container-lowest rounded-[18px] shadow-2xl max-w-md w-full mx-4 relative z-10 p-6 animate-[fadeIn_0.2s_ease-out]">
+<div class="flex items-start gap-4">
+<div class="w-10 h-10 rounded-full bg-error-container text-error flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">warning</span>
+</div>
+<div>
+<h3 class="font-title-sm text-title-sm text-on-surface mb-2">Hủy đặt sân?</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6">Bạn có chắc chắn muốn hủy booking <span class="font-label-sm text-on-surface font-bold" id="modal-booking-id">#BK-2026-001</span> không?</p>
+<div class="flex gap-3 justify-end">
+<button class="px-4 py-2 rounded-lg font-label-sm text-on-surface hover:bg-surface-container transition-colors" onclick="document.getElementById('cancel-modal').classList.add('hidden')">Đóng</button>
+<button class="px-4 py-2 rounded-lg font-label-sm bg-error text-on-error hover:bg-on-error-container transition-colors shadow-sm" onclick="confirmCancel()">Xác nhận hủy</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Toast Notification -->
+<div class="hidden fixed top-24 right-8 bg-surface-container-lowest border border-outline-variant/30 shadow-lg rounded-lg overflow-hidden w-80 z-[110] transform translate-x-full transition-transform duration-300" id="toast">
+<div class="p-4 flex items-start gap-3">
+<span class="material-symbols-outlined text-[#00796F] mt-0.5" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<div class="flex-1">
+<h4 class="font-title-sm text-title-sm text-on-surface">Đã hủy booking</h4>
+<p class="text-sm text-on-surface-variant mt-1">Booking đã được chuyển sang trạng thái CANCELLED.</p>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface" onclick="document.getElementById('toast').classList.add('hidden')"><span class="material-symbols-outlined text-[20px]">close</span></button>
+</div>
+<div class="h-1 bg-surface-variant w-full">
+<div class="h-full bg-[#00796F] w-full origin-left" id="toast-progress"></div>
+</div>
+</div>
+<script>
+        function showCancelModal(bookingId) {
+            document.getElementById('modal-booking-id').textContent = bookingId;
+            document.getElementById('cancel-modal').classList.remove('hidden');
+        }
+
+        function confirmCancel() {
+            document.getElementById('cancel-modal').classList.add('hidden');
+            showToast();
+        }
+
+        function showToast() {
+            const toast = document.getElementById('toast');
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.remove('translate-x-full');
+                toast.classList.add('translate-x-0');
+            }, 10);
+
+            const progress = document.getElementById('toast-progress');
+            progress.style.transition = 'transform 3s linear';
+            progress.style.transform = 'scaleX(0)';
+
+            setTimeout(() => {
+                toast.classList.remove('translate-x-0');
+                toast.classList.add('translate-x-full');
+                setTimeout(() => {
+                    toast.classList.add('hidden');
+                    progress.style.transition = 'none';
+                    progress.style.transform = 'scaleX(1)';
+                }, 300);
+            }, 3000);
+        }
+    </script>
+
+
+</body></html>

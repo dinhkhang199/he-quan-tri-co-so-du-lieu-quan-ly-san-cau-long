@@ -1,0 +1,295 @@
+<!DOCTYPE html><html lang="vi" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>BadmintonPro - Đặt sân</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-container": "#fbfdff",
+                        "outline-variant": "#bcc9c6",
+                        "outline": "#6d7a77",
+                        "on-primary-container": "#f4fffc",
+                        "on-surface": "#171d1c",
+                        "surface-dim": "#d6dbd9",
+                        "inverse-on-surface": "#edf2f0",
+                        "surface-container-high": "#e4e9e7",
+                        "surface-container-lowest": "#ffffff",
+                        "primary": "#00685f",
+                        "tertiary": "#595c5e",
+                        "tertiary-fixed-dim": "#c4c7c9",
+                        "on-secondary-fixed": "#131b2e",
+                        "secondary-container": "#dae2fd",
+                        "tertiary-fixed": "#e0e3e5",
+                        "error": "#ba1a1a",
+                        "on-secondary": "#ffffff",
+                        "primary-fixed": "#89f5e7",
+                        "primary-fixed-dim": "#6bd8cb",
+                        "primary-container": "#008378",
+                        "surface-bright": "#f5faf8",
+                        "error-container": "#ffdad6",
+                        "surface-container-low": "#f0f5f2",
+                        "surface-variant": "#dee4e1",
+                        "secondary-fixed": "#dae2fd",
+                        "on-tertiary-fixed": "#191c1e",
+                        "on-surface-variant": "#3d4947",
+                        "on-background": "#171d1c",
+                        "on-primary-fixed-variant": "#005049",
+                        "on-primary": "#ffffff",
+                        "secondary": "#565e74",
+                        "on-error": "#ffffff",
+                        "secondary-fixed-dim": "#bec6e0",
+                        "on-primary-fixed": "#00201d",
+                        "on-tertiary-fixed-variant": "#444749",
+                        "surface-tint": "#006a61",
+                        "on-secondary-container": "#5c647a",
+                        "background": "#f5faf8",
+                        "tertiary-container": "#727577",
+                        "surface-container-highest": "#dee4e1",
+                        "on-secondary-fixed-variant": "#3f465c",
+                        "on-error-container": "#93000a",
+                        "on-tertiary": "#ffffff",
+                        "surface": "#f5faf8",
+                        "inverse-surface": "#2c3130",
+                        "surface-container": "#eaefed",
+                        "inverse-primary": "#6bd8cb"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "0.5rem",
+                        "lg": "2rem",
+                        "md": "1.5rem",
+                        "base": "4px",
+                        "gutter": "1.5rem",
+                        "container-padding": "2rem",
+                        "sm": "1rem",
+                        "xl": "3rem"
+                    },
+                    "fontFamily": {
+                        "title-sm": ["Hanken Grotesk"],
+                        "display-lg": ["Hanken Grotesk"],
+                        "headline-lg-mobile": ["Hanken Grotesk"],
+                        "body-md": ["Hanken Grotesk"],
+                        "label-sm": ["JetBrains Mono"],
+                        "headline-md": ["Hanken Grotesk"]
+                    },
+                    "fontSize": {
+                        "title-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "display-lg": ["36px", {"lineHeight": "44px", "fontWeight": "700"}],
+                        "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-sm": ["13px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        
+        .loading-shimmer {
+            background: #f6f7f8;
+            background-image: linear-gradient(to right, #f6f7f8 0%, #edeef1 20%, #f6f7f8 40%, #f6f7f8 100%);
+            background-repeat: no-repeat;
+            background-size: 800px 100%; 
+            animation-duration: 1.5s;
+            animation-fill-mode: forwards; 
+            animation-iteration-count: infinite;
+            animation-name: placeholderShimmer;
+            animation-timing-function: linear;
+        }
+        
+        @keyframes placeholderShimmer {
+            0% {
+                background-position: -468px 0;
+            }
+            100% {
+                background-position: 468px 0; 
+            }
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md text-body-md antialiased min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<nav class="flex justify-between items-center px-8 py-4 sticky top-0 z-50 w-full bg-surface/80 backdrop-blur-md dark:bg-background/80 shadow-sm dark:shadow-none">
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#00796F] dark:text-[#00796F]" style="font-variation-settings: &quot;FILL&quot; 1;">sports_badminton</span>
+<span class="font-title-sm text-title-sm font-black text-on-surface">BadmintonPro</span>
+</div>
+<div class="hidden md:flex gap-6 ml-8">
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-all" href="#">Tìm sân</a>
+<a class="text-on-surface-variant font-body-md hover:text-primary transition-all" href="#">Lịch sử đặt</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-primary transition-transform duration-200">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant transition-transform duration-200 hover:scale-105">
+<img alt="User Avatar" class="w-full h-full object-cover" data-alt="A small, professional avatar portrait of a modern user in a bright, clean indoor setting. Soft, natural lighting. High quality photography suitable for a corporate SaaS interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDwbXOjJDIGICf7pgUtkCONze6q6Ro8aS2wc1i0SpDJ7sWvjRsek2FHA52sJKBp9obwK2QU2OwyXvFk7yYOnvr1OA04Cat5RHoX6_WG-dpEiHlOs7pimU9Fkw_U2xQ2JNhI-6osNf1RowihhssoaiBHnngKPlOaoe7fBHJ37NKU6mbhGYT_LykzU5BljrTt8QlVXNvS2yY8Fef-wO81bz29Rhn7H-gks6ui38aQZftMCF2yadIumqX_4g">
+</button>
+</div>
+</nav>
+<!-- Main Layout -->
+<div class="flex-1 flex w-full max-w-7xl mx-auto py-8 px-8 gap-8 relative flex-col md:flex-row">
+<!-- Left Panel: Summary & Rules -->
+<div class="w-full md:w-1/3 flex flex-col gap-6">
+<!-- Selected Court Summary -->
+<div class="bg-surface-container-lowest rounded-xl p-md shadow-[0_2px_15px_rgba(0,0,0,0.04)] border border-outline-variant/30 relative overflow-hidden">
+<div class="absolute top-0 left-0 w-full h-32 bg-surface-variant">
+<img alt="Court Image" class="w-full h-full object-cover opacity-80" data-alt="A brightly lit, modern indoor badminton court with polished wooden flooring and crisp green boundary lines. The net is pristine white, and the lighting is even and professional, suitable for high-level competitive play. The mood is energetic and clean." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-qHV6ZS-7B8-U6WvbhMpKWQFy-i1sUPa0m8Ef5x9g6w4V4WzWG-Qda_890OMJx1XAWzEocMLNIwc4dpyfs_wWQKg4r3gEqRubqVpWOoEmEWXIPO9PwJzR2LZXcYxqe0q0ndyuqYkO0tI-fGZzMqa-1XfYuXHyp9FrB0fHHPhE1fEd7vOOjTc1uf5IPQn_-NG3uyw7fViMcXjlsydZBZfk9gkhbjYCob62EZPiVsX2m-_WlMwy_5Xhdw">
+</div>
+<div class="relative pt-24">
+<div class="flex justify-between items-end mb-4">
+<div>
+<span class="inline-flex items-center gap-1 bg-primary-container/10 text-primary px-2 py-1 rounded-full text-label-sm font-label-sm mb-2">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+                                Còn trống
+                            </span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Sân Premium A1</h2>
+</div>
+</div>
+<p class="text-on-surface-variant text-body-md font-body-md mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">location_on</span>
+                        Cụm sân Trung tâm, Tầng 2
+                    </p>
+<div class="flex flex-col gap-2 pt-4 border-t border-outline-variant/30">
+<div class="flex justify-between text-body-md font-body-md">
+<span class="text-on-surface-variant">Loại thảm</span>
+<span class="text-on-surface font-medium">Thảm PVC</span>
+</div>
+<div class="flex flex-col gap-1 text-body-md font-body-md"><div class="flex justify-between"><span class="text-on-surface-variant">Giá theo giờ</span><span class="text-primary font-bold">100.000đ</span></div><div class="flex justify-between"><span class="text-on-surface-variant">3 giờ</span><span class="text-primary font-bold">270.000đ</span></div></div>
+</div>
+</div>
+</div>
+<!-- Rules Card -->
+<div class="bg-surface-container-lowest rounded-xl p-md shadow-[0_2px_15px_rgba(0,0,0,0.04)] border border-outline-variant/30">
+<h3 class="font-title-sm text-title-sm text-on-surface mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary">gavel</span>
+                    Quy tắc đặt sân
+                </h3>
+<ul class="flex flex-col gap-3">
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-outline text-[20px] mt-0.5">schedule</span>
+<div>
+<p class="text-on-surface font-medium text-body-md font-body-md">Giờ hoạt động</p>
+<p class="text-on-surface-variant text-sm">06:00 - 22:00 hàng ngày</p>
+</div>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-outline text-[20px] mt-0.5">timer</span>
+<div>
+<p class="text-on-surface font-medium text-body-md font-body-md">Thời lượng</p>
+<p class="text-on-surface-variant text-sm">Tối thiểu 1 giờ, tối đa 3 giờ; chọn theo bước 30 phút.</p>
+</div>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-outline text-[20px] mt-0.5">event_busy</span>
+<div>
+<p class="text-on-surface font-medium text-body-md font-body-md">Hủy sân</p>
+<p class="text-on-surface-variant text-sm">Booking PENDING có thể hủy. Booking BOOKED chỉ được khách tự hủy khi còn ít nhất 3 giờ trước giờ bắt đầu.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<!-- Right Panel: Booking Form & States -->
+<div class="w-full md:w-2/3 flex flex-col gap-6">
+<div class="bg-surface-container-lowest rounded-xl p-lg shadow-[0_2px_15px_rgba(0,0,0,0.04)] border border-outline-variant/30">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-6">Chi tiết đặt sân</h2>
+<form class="flex flex-col gap-6">
+<!-- Date Selection -->
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface uppercase">Ngày đặt</label>
+<div class="relative">
+<input class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-4 py-3 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all cursor-pointer" type="date" value="2026-08-18">
+<span class="material-symbols-outlined absolute right-4 top-3.5 text-on-surface-variant pointer-events-none">calendar_month</span>
+</div>
+</div>
+<!-- Time Selection Grid -->
+<div class="grid grid-cols-2 gap-4">
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface uppercase">Giờ bắt đầu</label>
+<select class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-4 py-3 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary appearance-none cursor-pointer" value="18:00"><option selected="" value="18:00">18:00</option><option value="18:30">18:30</option><option value="19:00">19:00</option><option value="19:30">19:30</option></select>
+</div>
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-label-sm text-on-surface uppercase">Giờ kết thúc</label>
+<select class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-4 py-3 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary appearance-none cursor-pointer" value="20:00"><option value="19:00">19:00</option><option value="19:30">19:30</option><option selected="" value="20:00">20:00</option><option value="20:30">20:30</option></select>
+</div>
+</div>
+<!-- Computed Summary -->
+<div class="bg-surface-container rounded-lg p-4 flex justify-between items-center mt-2">
+<div class="flex flex-col">
+<span class="text-on-surface-variant text-sm">Thời lượng</span>
+<span class="font-title-sm text-title-sm text-on-surface">2 giờ</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-on-surface-variant text-sm">Chi phí dự kiến</span>
+<span class="font-headline-md text-headline-md text-primary">200.000đ</span>
+</div>
+</div>
+<!-- Actions -->
+<div class="flex justify-end gap-4 mt-4">
+<button class="px-6 py-2.5 rounded-lg text-primary font-title-sm text-title-sm hover:bg-primary-container/10 transition-colors" type="button">
+                            Quay lại
+                        </button>
+<button class="px-8 py-2.5 rounded-lg bg-primary text-on-primary font-title-sm text-title-sm shadow-sm hover:bg-primary/90 hover:shadow-md transition-all flex items-center gap-2" type="button">
+<span class="material-symbols-outlined text-[20px]">check_circle</span>
+                            Xác nhận đặt sân
+                        </button>
+</div>
+</form>
+</div>
+<!-- Demo States Container (For illustrative purposes in this static design) -->
+
+</div>
+</div>
+<!-- Success Toast (Fixed Top Right) -->
+<div class="fixed top-24 right-8 z-50 animate-[slideIn_0.3s_ease-out_forwards] hidden">
+<div class="bg-surface-container-lowest border border-outline-variant/30 shadow-[0_8px_30px_rgba(0,0,0,0.12)] rounded-lg w-80 overflow-hidden">
+<div class="p-4 flex items-start gap-3">
+<div class="text-primary mt-0.5">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div class="flex-1">
+<h4 class="font-title-sm text-title-sm text-on-surface">Đã gửi yêu cầu đặt sân</h4>
+<p class="text-sm text-on-surface-variant mt-1">Trạng thái: <span class="inline-flex items-center gap-1 bg-[#fff8e1] text-[#795548] px-1.5 py-0.5 rounded text-xs font-label-sm ml-1"><span class="w-1 h-1 rounded-full bg-[#795548]"></span>PENDING</span></p>
+<p class="text-sm text-on-surface-variant mt-2">Yêu cầu đặt sân của bạn đang chờ quản lý duyệt.</p>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<!-- Progress bar -->
+<div class="h-1 w-full bg-surface-variant">
+<div class="h-full bg-primary w-2/3"></div> <!-- Simulating progression -->
+</div>
+</div>
+</div>
+<style>
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    </style>
+
+
+</body></html>

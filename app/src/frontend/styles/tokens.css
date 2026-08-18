@@ -1,0 +1,127 @@
+/*
+ * BadmintonPro design tokens (source: design/stitch_.../courtmaster_pro/DESIGN.md
+ * + login code.html Tailwind config). Visual-only tokens for Phase 2.0 scaffold.
+ */
+:root {
+  --color-background: #f8fafc;
+  --color-surface: #ffffff;
+  --color-primary: #00796f;
+  --color-primary-container: #008378;
+  --color-on-primary: #ffffff;
+  --color-on-surface: #171d1c;
+  --color-on-surface-variant: #475569;
+  --color-outline-variant: #bcc9c6;
+  --color-error: #ba1a1a;
+
+  --font-ui: 'Hanken Grotesk', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --radius-card: 1.125rem;
+  --radius-btn: 0.75rem;
+  --shadow-premium: 0 10px 40px -10px rgba(0, 121, 111, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-ui);
+  background-color: var(--color-background);
+  color: var(--color-on-surface);
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.shell {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.shell-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.shell-brand {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.shell-badge {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  color: var(--color-primary);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: 9999px;
+  padding: 0.35rem 0.75rem;
+}
+
+.shell-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-premium);
+  padding: 1.5rem;
+}
+
+.card-error {
+  border-left: 4px solid var(--color-error);
+}
+
+.card-title {
+  margin: 0 0 1rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.card-note {
+  margin: 0 0 1rem;
+  color: var(--color-on-surface-variant);
+}
+
+.kv {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.5rem 1.5rem;
+  margin: 0 0 1.5rem;
+}
+
+.kv dt {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--color-on-surface-variant);
+}
+
+.kv dd {
+  margin: 0;
+  font-weight: 500;
+}
+
+.btn {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  color: var(--color-on-primary);
+  background: var(--color-primary-container);
+  border: none;
+  border-radius: var(--radius-btn);
+  padding: 0.6rem 1.25rem;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: var(--color-primary);
+}

@@ -1,0 +1,414 @@
+<!DOCTYPE html><html class="light" lang="vi"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>BadmintonPro - Quản lý Booking</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-secondary-container": "#5c647a",
+                      "on-tertiary-fixed-variant": "#444749",
+                      "background": "#f5faf8",
+                      "outline-variant": "#bcc9c6",
+                      "surface-dim": "#d6dbd9",
+                      "tertiary": "#595c5e",
+                      "primary-fixed-dim": "#6bd8cb",
+                      "primary-container": "#008378",
+                      "error": "#ba1a1a",
+                      "surface-tint": "#006a61",
+                      "on-error-container": "#93000a",
+                      "secondary-fixed-dim": "#bec6e0",
+                      "tertiary-container": "#727577",
+                      "surface-container-lowest": "#ffffff",
+                      "surface": "#f5faf8",
+                      "on-primary-fixed": "#00201d",
+                      "surface-container-highest": "#dee4e1",
+                      "on-secondary-fixed-variant": "#3f465c",
+                      "error-container": "#ffdad6",
+                      "primary-fixed": "#89f5e7",
+                      "on-primary": "#ffffff",
+                      "on-surface-variant": "#3d4947",
+                      "on-secondary": "#ffffff",
+                      "on-background": "#171d1c",
+                      "secondary-fixed": "#dae2fd",
+                      "surface-container": "#eaefed",
+                      "on-error": "#ffffff",
+                      "primary": "#00685f",
+                      "surface-variant": "#dee4e1",
+                      "on-secondary-fixed": "#131b2e",
+                      "outline": "#6d7a77",
+                      "surface-container-low": "#f0f5f2",
+                      "on-tertiary-container": "#fbfdff",
+                      "on-surface": "#171d1c",
+                      "secondary-container": "#dae2fd",
+                      "inverse-on-surface": "#edf2f0",
+                      "on-primary-fixed-variant": "#005049",
+                      "on-tertiary": "#ffffff",
+                      "secondary": "#565e74",
+                      "tertiary-fixed-dim": "#c4c7c9",
+                      "on-tertiary-fixed": "#191c1e",
+                      "inverse-primary": "#6bd8cb",
+                      "tertiary-fixed": "#e0e3e5",
+                      "inverse-surface": "#2c3130",
+                      "on-primary-container": "#f4fffc",
+                      "surface-container-high": "#e4e9e7",
+                      "surface-bright": "#f5faf8"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "xl": "3rem",
+                      "gutter": "1.5rem",
+                      "sm": "1rem",
+                      "container-padding": "2rem",
+                      "md": "1.5rem",
+                      "base": "4px",
+                      "lg": "2rem",
+                      "xs": "0.5rem"
+              },
+              "fontFamily": {
+                      "display-lg": ["Hanken Grotesk"],
+                      "body-md": ["Hanken Grotesk"],
+                      "headline-lg-mobile": ["Hanken Grotesk"],
+                      "label-sm": ["JetBrains Mono"],
+                      "headline-md": ["Hanken Grotesk"],
+                      "title-sm": ["Hanken Grotesk"]
+              },
+              "fontSize": {
+                      "display-lg": ["36px", {"lineHeight": "44px", "fontWeight": "700"}],
+                      "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}],
+                      "label-sm": ["13px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "title-sm": ["18px", {"lineHeight": "24px", "fontWeight": "600"}]
+              }
+            }
+          }
+        }
+    </script>
+<style>
+        body { font-family: 'Hanken Grotesk', sans-serif; }
+        .font-mono-custom { font-family: 'JetBrains Mono', monospace; }
+        
+        /* Demo Drawer Animation */
+        #main-content { transition: width 0.3s ease-in-out; }
+        #demo-drawer { transition: transform 0.3s ease-in-out; }
+        #demo-drawer.open { transform: translateX(0); }
+        
+        /* Shimmer effect for loading states */
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+        .animate-shimmer {
+            animation: shimmer 2s infinite linear;
+            background: linear-gradient(to right, #f6f7f8 4%, #edeef1 25%, #f6f7f8 36%);
+            background-size: 1000px 100%;
+        }
+
+        /* Tab Content Switching */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body class="bg-background text-on-surface h-screen w-full flex overflow-hidden">
+<!-- JSON Component: SideNavBar -->
+<aside class="bg-surface-container-low left-0 h-full w-72 flex flex-col border-r border-outline-variant/30 flex-shrink-0 z-20">
+<!-- Brand/Header -->
+<div class="p-6 flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-primary-container/20 flex items-center justify-center shrink-0">
+<img alt="Badminton Logo" class="w-7 h-7 object-contain" src="https://lh3.googleusercontent.com/aida/AP1WRLt9JpFpSOSCSQyB_oIuRrnk_jueYmGGjs2UU1rS2inSqoki9btJc8XP1kI63rlX5jjlHGnrhJcjPePXi3QVGHYocdp_N6jFkF7bfbY1YzjVLZFULjDaTNbkX8V5MWwrNRBNp6F1oFXWy2Nc2sfGK4nvoMtVqXxvQoQsw1rn_gNA1jUFLWtXcGmxS5nNV4DhcJC9riWQX3S264JwZ0FZdT-IUrEC627AcnkXiEBfREqG_XrvXbf7zkIho9A">
+</div>
+<div>
+<h1 class="font-headline-md text-[20px] font-bold text-primary flex items-center gap-2">
+                    BadmintonPro
+                </h1>
+<div class="flex items-center gap-2 mt-1">
+<span class="text-[10px] font-bold tracking-wider text-primary bg-primary-container/30 px-1.5 py-0.5 rounded-sm">[MANAGER]</span>
+</div>
+</div>
+</div>
+<!-- Navigation Tabs -->
+<nav class="flex-1 px-4 py-2 space-y-1 overflow-y-auto">
+<!-- Inactive: Bảng điều khiển -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant font-body-md hover:bg-surface-variant/50 transition-colors duration-200 cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors" data-icon="dashboard">dashboard</span>
+<span>Bảng điều khiển</span>
+</a>
+<!-- ACTIVE: Lịch đặt sân (Mapping to Quản lý booking request based on JSON) -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-primary font-bold border-r-4 border-primary bg-primary-container/10 transition-colors duration-200 cursor-pointer active:scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_month" data-weight="fill" style="font-variation-settings: 'FILL' 1;">calendar_month</span>
+<span>Quản lý booking</span>
+</a>
+<!-- Inactive: Quản lý sân -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant font-body-md hover:bg-surface-variant/50 transition-colors duration-200 cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors" data-icon="sports_badminton">sports_badminton</span>
+<span>Quản lý sân</span>
+</a>
+<!-- Inactive: Thông báo -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant font-body-md hover:bg-surface-variant/50 transition-colors duration-200 cursor-pointer active:scale-95 group" href="#">
+<span class="material-symbols-outlined text-outline group-hover:text-primary transition-colors" data-icon="notifications">notifications</span>
+<span>Thông báo</span>
+</a>
+</nav>
+<!-- Footer -->
+<div class="p-4 mt-auto border-t border-outline-variant/30 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-error font-body-md hover:bg-error-container/50 transition-colors duration-200 cursor-pointer" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span>Đăng xuất</span>
+</a>
+</div>
+</aside>
+<!-- Main Workspace -->
+<div class="flex-1 flex min-w-0 bg-background relative overflow-hidden">
+<div class="flex-1 flex flex-col w-full transition-all duration-300" id="main-content">
+<!-- JSON Component: TopNavBar -->
+<header class="bg-surface/80 backdrop-blur-md flex justify-between items-center px-8 py-4 sticky top-0 z-10 w-full shadow-sm border-b border-outline-variant/20">
+<!-- Search Bar (Left aligned per JSON) -->
+<div class="flex items-center w-full max-w-md bg-surface-container-low rounded-full px-4 py-2 border border-outline-variant/40 focus-within:border-primary transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant mr-2" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 outline-none w-full font-body-md text-on-surface placeholder-on-surface-variant/70 text-sm" placeholder="Tìm theo mã booking, khách hàng hoặc sân..." type="text">
+</div>
+<!-- Trailing Actions & Profile -->
+<div class="flex items-center gap-2">
+<button class="p-2 rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all duration-200 relative">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border-2 border-surface"></span>
+</button>
+<div class="h-8 w-[1px] bg-outline-variant/40 mx-2"></div>
+<button class="flex items-center gap-2 p-1 rounded-full hover:bg-surface-container transition-all duration-200">
+<img class="w-9 h-9 rounded-full object-cover border-2 border-surface-container" data-alt="A close up, professional headshot of a young asian male system administrator wearing a neat white collared shirt, smiling subtly against a soft grey studio background, well-lit, modern corporate style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBd-VqvP0n8O5AXG86FWTj8KcPPw3imRzyATb7Vc8Kkxc-JU59AazLb20_qeBKPYTXTcq94JFjSgMFsxQpqlFtGtqrzodxzrU4rOjyftHa0_4xZIH6p62pJtzslem4kI5fOAWjGebTR-EFyzteKOtyADU9R1CEBuTRc0Wdccz1zG_tgfqaYFWI9JM0Lr0AZ79Z38HkBFxtsqpNuZAa1xCbDFyWJUs6Z9iBoCS3rXvKujU39IbOIeJUEdw">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="arrow_drop_down">arrow_drop_down</span>
+</button>
+</div>
+</header>
+<!-- Main Content Scrollable Area -->
+<main class="flex-1 overflow-y-auto p-8">
+<!-- Page Header & Demo Toggle -->
+<div class="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+<div>
+<h2 class="font-display-lg text-display-lg text-on-surface tracking-tight">Quản lý booking</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-2">Duyệt và theo dõi các lượt đặt sân trong hệ thống.</p>
+</div>
+<!-- Demo Mode Toggle -->
+<button class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-primary/30 bg-primary-container/5 text-primary hover:bg-primary-container/20 transition-all font-label-sm text-sm" id="demo-toggle-btn" onclick="toggleDemo()">
+<span class="material-symbols-outlined text-[20px]" data-icon="terminal">terminal</span>
+                    Chế độ demo CSDL
+                </button>
+</div>
+<!-- Booking Table Card -->
+<div class="bg-surface-container-lowest rounded-[18px] border border-outline-variant/40 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.04)] overflow-hidden">
+<!-- Filter/Action Bar inside card -->
+<div class="px-6 py-4 border-b border-outline-variant/30 flex justify-between items-center bg-surface-bright">
+<div class="flex gap-2"><button class="px-4 py-1.5 text-sm font-medium rounded-full bg-surface-container text-on-surface">Tất cả</button><button class="px-4 py-1.5 text-sm font-medium rounded-full bg-transparent hover:bg-surface-container text-on-surface-variant transition-colors">PENDING</button><button class="px-4 py-1.5 text-sm font-medium rounded-full bg-transparent hover:bg-surface-container text-on-surface-variant transition-colors">BOOKED</button><button class="px-4 py-1.5 text-sm font-medium rounded-full bg-transparent hover:bg-surface-container text-on-surface-variant transition-colors">COMPLETED</button><button class="px-4 py-1.5 text-sm font-medium rounded-full bg-transparent hover:bg-surface-container text-on-surface-variant transition-colors">CANCELLED</button><button class="px-4 py-1.5 text-sm font-medium rounded-full bg-transparent hover:bg-surface-container text-on-surface-variant transition-colors">REJECTED</button></div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse min-w-[900px]">
+<thead>
+<tr class="bg-[#F8FAFC] border-b border-outline-variant/30 text-on-surface-variant font-label-sm text-[12px] uppercase tracking-wider">
+<th class="py-4 px-6 font-medium">Mã booking</th>
+<th class="py-4 px-6 font-medium">Khách hàng</th>
+<th class="py-4 px-6 font-medium">Sân</th>
+<th class="py-4 px-6 font-medium">Thời gian</th>
+<th class="py-4 px-6 font-medium text-right">Tổng tiền</th>
+<th class="py-4 px-6 font-medium">Trạng thái</th>
+<th class="py-4 px-6 font-medium text-right">Thao tác</th>
+</tr>
+</thead>
+<tbody class="font-body-md text-[15px] divide-y divide-outline-variant/20">
+<!-- Row 1: PENDING -->
+<tr class="hover:bg-slate-50 transition-colors group">
+<td class="py-4 px-6 font-mono-custom text-tertiary">#BK-2026-021</td>
+<td class="py-4 px-6">
+<div class="font-medium text-on-surface">Nguyễn Văn A</div>
+<div class="text-sm text-on-surface-variant">0901234567</div>
+</td>
+<td class="py-4 px-6 font-medium">Sân số 3</td>
+<td class="py-4 px-6">
+<div class="text-on-surface">24/10/2026</div>
+<div class="text-sm text-on-surface-variant">18:00 - 19:00</div>
+</td>
+<td class="py-4 px-6 text-right font-medium">100.000đ</td>
+<td class="py-4 px-6">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 ring-1 ring-amber-600/20 font-label-sm text-[12px]">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                        PENDING
+                                    </span>
+</td>
+<td class="py-4 px-6 text-right">
+<div class="flex items-center justify-end gap-2 transition-opacity">
+<button class="text-sm font-medium text-primary hover:underline px-2">Duyệt</button>
+<button class="text-sm font-medium text-error hover:underline px-2">Từ chối</button>
+</div>
+</td>
+</tr>
+<!-- Row 2: BOOKED -->
+<tr class="hover:bg-slate-50 transition-colors group">
+<td class="py-4 px-6 font-mono-custom text-tertiary">#BK-2026-020</td>
+<td class="py-4 px-6">
+<div class="font-medium text-on-surface">Trần Thị B</div>
+<div class="text-sm text-on-surface-variant">0987654321</div>
+</td>
+<td class="py-4 px-6 font-medium">Sân VIP 1</td>
+<td class="py-4 px-6">
+<div class="text-on-surface">24/10/2026</div>
+<div class="text-sm text-on-surface-variant">19:00 - 22:00</div>
+</td>
+<td class="py-4 px-6 text-right font-medium">270.000đ</td>
+<td class="py-4 px-6">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-600/20 font-label-sm text-[12px]">
+<span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                                        BOOKED
+                                    </span>
+</td>
+<td class="py-4 px-6 text-right">
+<div class="flex items-center justify-end gap-2 transition-opacity">
+<button class="text-sm font-medium text-primary hover:underline px-2">Hoàn thành</button>
+<button class="text-sm font-medium text-error hover:underline px-2">Hủy</button>
+</div>
+</td>
+</tr>
+<!-- Row 3: COMPLETED -->
+<tr class="hover:bg-slate-50 transition-colors">
+<td class="py-4 px-6 font-mono-custom text-tertiary">#BK-2026-018</td>
+<td class="py-4 px-6"><div class="font-medium text-on-surface">Lê Hoàng C</div><div class="text-sm text-on-surface-variant">0934567890</div></td>
+<td class="py-4 px-6 font-medium">Sân số 2</td>
+<td class="py-4 px-6">
+<div class="text-on-surface">23/10/2026</div>
+<div class="text-sm text-on-surface-variant">15:00 - 17:00</div>
+</td>
+<td class="py-4 px-6 text-right font-medium">200.000đ</td>
+<td class="py-4 px-6">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20 font-label-sm text-[12px]">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                        COMPLETED
+                                    </span>
+</td>
+<td class="py-4 px-6 text-right text-outline">—</td>
+</tr>
+<!-- Row 4: REJECTED -->
+<tr class="hover:bg-slate-50 transition-colors">
+<td class="py-4 px-6 font-mono-custom text-tertiary">#BK-2026-015</td>
+<td class="py-4 px-6"><div class="font-medium text-on-surface">Phạm Văn D</div><div class="text-sm text-on-surface-variant">0945678901</div></td>
+<td class="py-4 px-6 font-medium">Sân số 5</td>
+<td class="py-4 px-6">
+<div class="text-on-surface">23/10/2026</div>
+<div class="text-sm text-on-surface-variant">20:00 - 21:00</div>
+</td>
+<td class="py-4 px-6 text-right font-medium">100.000đ</td>
+<td class="py-4 px-6">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 ring-1 ring-rose-600/20 font-label-sm text-[12px]">
+<span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                                        REJECTED
+                                    </span>
+</td>
+<td class="py-4 px-6 text-right text-outline">—</td>
+</tr>
+<!-- Row 5: CANCELLED -->
+<tr class="hover:bg-slate-50 transition-colors">
+<td class="py-4 px-6 font-mono-custom text-tertiary">#BK-2026-014</td>
+<td class="py-4 px-6">
+<div class="font-medium text-on-surface">Đinh Văn E</div>
+<div class="text-sm text-on-surface-variant">0912345678</div>
+</td>
+<td class="py-4 px-6 font-medium">Sân số 1</td>
+<td class="py-4 px-6">
+<div class="text-on-surface">22/10/2026</div>
+<div class="text-sm text-on-surface-variant">17:00 - 18:00</div>
+</td>
+<td class="py-4 px-6 text-right font-medium">100.000đ</td>
+<td class="py-4 px-6">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 ring-1 ring-slate-600/20 font-label-sm text-[12px]">
+<span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+                                        CANCELLED
+                                    </span>
+</td>
+<td class="py-4 px-6 text-right text-outline">—</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination Footer -->
+<div class="px-6 py-4 border-t border-outline-variant/30 flex justify-between items-center text-sm text-on-surface-variant">
+<span>Hiển thị 1-10 của 45 kết quả</span>
+<div class="flex gap-1">
+<button class="p-1 rounded hover:bg-surface-container disabled:opacity-50"><span class="material-symbols-outlined" data-icon="chevron_left">chevron_left</span></button>
+<button class="p-1 rounded hover:bg-surface-container"><span class="material-symbols-outlined" data-icon="chevron_right">chevron_right</span></button>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Technical Demo Drawer (Hidden by default) -->
+<div class="fixed top-0 right-0 h-full w-[35%] min-w-[400px] bg-[#1e2322] text-[#fbfdff] shadow-2xl border-l border-outline/30 z-50 translate-x-full flex flex-col" id="demo-drawer">
+<!-- Drawer Header -->
+<div class="p-4 border-b border-outline/20 flex justify-between items-center bg-[#1e2322]">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-fixed" data-icon="database">database</span>
+<h3 class="font-title-sm font-semibold tracking-wide text-on-primary-fixed">CSDL Demo Terminal</h3>
+</div>
+<button class="text-outline hover:text-white transition-colors" onclick="toggleDemo()">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+</div>
+<!-- Demo Tabs -->
+<div class="flex px-2 pt-2 bg-[#1e2322] border-b border-outline/20 overflow-x-auto no-scrollbar">
+<button class="px-4 py-2 text-sm font-label-sm border-b-2 border-primary-fixed text-primary-fixed tab-btn active" onclick="switchTab('approve-tab', this)">Approve cạnh tranh</button>
+<button class="px-4 py-2 text-sm font-label-sm border-b-2 border-transparent text-outline hover:text-white transition-colors tab-btn" onclick="switchTab('deadlock-tab', this)">Deadlock</button>
+<button class="px-4 py-2 text-sm font-label-sm border-b-2 border-transparent text-outline hover:text-white transition-colors tab-btn" onclick="switchTab('phantom-tab', this)">Phantom Read</button>
+</div>
+<!-- Terminal Output Area -->
+<div class="flex-1 p-4 overflow-y-auto bg-[#0a0c0b] font-mono-custom text-[13px] leading-relaxed">
+<!-- Approve Tab Content -->
+<div class="tab-content active" id="approve-tab"><div class="text-outline mb-4">-- Scenario: Hai Session cùng duyệt 2 booking chồng chéo thời gian trên cùng 1 sân.</div><div class="mb-4"><div class="text-primary-fixed mb-1">&gt; Session A</div><div class="pl-3 border-l-2 border-primary-fixed/30 text-[#89f5e7]/80">BEGIN TRAN;<br>SELECT * FROM Bookings WITH (UPDLOCK) WHERE BookingId = '550E8400-E29B-41D4-A716-446655440000';<br><span class="text-outline italic">-- Booking A: Sân VIP 1 (18:00-20:00) - PENDING</span></div></div><div class="mb-4"><div class="text-[#dae2fd] mb-1">&gt; Session B</div><div class="pl-3 border-l-2 border-[#dae2fd]/30 text-[#dae2fd]/80 relative">BEGIN TRAN;<br>SELECT * FROM Bookings WITH (UPDLOCK) WHERE BookingId = '7C9E6679-7425-40DE-944B-E07FC1F90AE7';<br><span class="text-outline italic">-- Booking B: Sân VIP 1 (18:30-20:30) - PENDING</span><br><span class="text-amber-400">-- Blocked! Waiting for Session A to release lock on Sân VIP 1 resource...</span><span class="absolute top-1/2 -left-3 w-2 h-2 bg-amber-400 rounded-full animate-ping"></span></div></div><div class="mb-4"><div class="text-primary-fixed mb-1">&gt; Session A</div><div class="pl-3 border-l-2 border-primary-fixed/30 text-[#89f5e7]/80">UPDATE Bookings SET Status = 'BOOKED' WHERE BookingId = '550E8400...';<br>COMMIT TRAN;<br><span class="text-emerald-400">-- Success. Booking A confirmed.</span></div></div><div class="mb-4"><div class="text-[#dae2fd] mb-1">&gt; Session B - Resumes</div><div class="pl-3 border-l-2 border-[#dae2fd]/30 text-[#dae2fd]/80"><span class="text-outline italic">-- Re-checking overlap constraints...</span><br><span class="text-rose-400">-- Conflict: Sân VIP 1 already BOOKED for 18:00-20:00.</span><br><span class="text-rose-400">-- Business Logic Violation -&gt; ROLLBACK</span><br>ROLLBACK TRAN;</div></div></div>
+<!-- Deadlock Tab Content -->
+<div class="tab-content" id="deadlock-tab"><div class="text-outline mb-4">-- Scenario: Deadlock (Vòng lặp chờ đợi) giữa 2 giao dịch.</div><div class="space-y-4 mb-6"><div class="text-[#89f5e7]/80">1. Session A giữ Lock trên Booking_1, chờ Lock trên Booking_2.</div><div class="text-[#dae2fd]/80">2. Session B giữ Lock trên Booking_2, chờ Lock trên Booking_1.</div><div class="flex items-center gap-4 py-2"><div class="w-12 h-12 rounded-full border-2 border-primary-fixed flex items-center justify-center text-primary-fixed">A</div><span class="material-symbols-outlined text-outline">sync_alt</span><div class="w-12 h-12 rounded-full border-2 border-[#dae2fd] flex items-center justify-center text-[#dae2fd]">B</div></div></div><div class="p-3 border border-error/30 bg-error/10 rounded"><div class="text-error font-bold flex items-center gap-2 mb-2"><span class="material-symbols-outlined text-[16px]">error</span>Msg 1205, Deadlock victim</div><div class="text-error/80">Transaction (Process ID 56) was deadlocked on lock resources with another process and has been chosen as the deadlock victim. Rerun the transaction.</div><button class="mt-3 px-3 py-1.5 bg-error/20 text-error-container hover:bg-error/30 rounded text-xs transition-colors border border-error/30">Thử lại</button></div></div>
+<!-- Phantom Read Tab Content -->
+<div class="tab-content" id="phantom-tab"><div class="text-outline mb-4">-- Scenario: Phantom Read (Dữ liệu ma)</div><div class="space-y-6"><div class="border-l-2 border-outline/20 pl-4"><div class="text-amber-400 text-xs uppercase mb-2">READ COMMITTED (Default)</div><div class="text-[#89f5e7]/80">Session A: SELECT COUNT(*) FROM Bookings WHERE CAST(StartTime AS date) = '2026-10-24'; <span class="text-white">-&gt; 2 rows</span></div><div class="text-[#dae2fd]/80">Session B: INSERT INTO Bookings (BookingId, StartTime, ...) VALUES ('A1B2...', '2026-10-24 19:00', ...); COMMIT;</div><div class="text-[#89f5e7]/80">Session A: SELECT COUNT(*) FROM Bookings WHERE CAST(StartTime AS date) = '2026-10-24'; <span class="text-rose-400">-&gt; 3 rows (Phantom!)</span></div></div><div class="border-l-2 border-primary-fixed/40 pl-4"><div class="text-emerald-400 text-xs uppercase mb-2">SERIALIZABLE</div><div class="text-[#89f5e7]/80">Session A: SELECT COUNT(*) FROM Bookings WHERE CAST(StartTime AS date) = '2026-10-24'; <span class="text-white">-&gt; 2 rows</span></div><div class="text-[#dae2fd]/80 italic">Session B: INSERT INTO Bookings ... <span class="text-amber-400">-- Blocked! (Range Lock held by Session A)</span></div><div class="text-[#89f5e7]/80">Session A: COMMIT;</div><div class="text-[#dae2fd]/80">Session B: -- Resumes and completes.</div></div></div></div>
+</div>
+</div>
+<script>
+    function toggleDemo() {
+        const drawer = document.getElementById('demo-drawer');
+        const mainContent = document.getElementById('main-content');
+        
+        if (drawer.classList.contains('translate-x-full')) {
+            drawer.classList.remove('translate-x-full');
+            drawer.classList.add('open');
+            mainContent.style.width = '65%';
+        } else {
+            drawer.classList.add('translate-x-full');
+            drawer.classList.remove('open');
+            mainContent.style.width = '100%';
+        }
+    }
+
+    function switchTab(tabId, btn) {
+        // Hide all tabs
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        // Remove active styling from all buttons
+        document.querySelectorAll('.tab-btn').forEach(b => {
+            b.classList.remove('border-primary-fixed', 'text-primary-fixed');
+            b.classList.add('border-transparent', 'text-outline');
+        });
+        
+        // Show selected tab
+        document.getElementById(tabId).classList.add('active');
+        // Add active styling to clicked button
+        btn.classList.remove('border-transparent', 'text-outline');
+        btn.classList.add('border-primary-fixed', 'text-primary-fixed');
+    }
+</script>
+</div>
+</body></html>
