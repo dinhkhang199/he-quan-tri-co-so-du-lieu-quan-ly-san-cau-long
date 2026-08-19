@@ -164,3 +164,53 @@ export interface CancelBookingResponse {
   bookingId: string;
   status: 'CANCELLED';
 }
+
+/**
+ * vw_AllBookings row as returned by the authenticated manager booking-list
+ * endpoint (05_views.sql). Exact view columns; StatusLabel is the view's CASE
+ * label. StartTime/EndTime/CreatedAt serialize as ISO strings carrying the
+ * local wall-clock digits — string-slice for display, do not re-interpret.
+ */
+export interface ManagerBooking {
+  BookingId: string;
+  UserId: string;
+  CustomerUsername: string;
+  CustomerPhone: string;
+  CourtId: string;
+  CourtName: string;
+  SurfaceType: string;
+  SizeType: string;
+  OwnerId: string;
+  PricePerHour: number;
+  StartTime: Date;
+  EndTime: Date;
+  Status: BookingStatus;
+  StatusLabel: string;
+  TotalCost: number;
+  CreatedAt: Date;
+  UpdatedAt: Date;
+}
+
+/**
+ * GET /api/manager/bookings response. Rows come verbatim from
+ * dbo.vw_AllBookings on the authenticated session connection, scoped in SQL by
+ * SESSION_CONTEXT (MANAGER sees all; COURT_MANAGER sees only OwnerId rows).
+ */
+export interface ManagerBookingsResponse {
+  bookings: ManagerBooking[];
+  count: number;
+}
+
+/**
+ * POST /api/manager/bookings/:bookingId/{approve|reject|cancel|complete}
+ * success response. The mutation ran through the matching contract SP; the UX
+ * then refetches the manager list from the DB so it never fabricates the
+ * resulting state.
+ */
+export interface ManagerMutationResponse {
+  bookingId: string;
+  status: 'BOOKED' | 'REJECTED' | 'CANCELLED' | 'COMPLETED';
+}
+
+/** Manager booking mutations backed by the four contract Stored Procedures. */
+export type ManagerBookingAction = 'approve' | 'reject' | 'cancel' | 'complete';

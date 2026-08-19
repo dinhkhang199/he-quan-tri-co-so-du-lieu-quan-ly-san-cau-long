@@ -60,15 +60,24 @@ GO
 ALTER ROLE bcm_app_role ADD MEMBER bcm_app;
 GO
 
--- ---- App chỉ được EXECUTE SP/Function + SELECT 4 Views + SELECT bảng lõi (chỉ đọc) ----
+-- ---- App chỉ được EXECUTE SP/Function + SELECT 2 Views công khai/khác ----
 -- KNOWN-05 FIX: Loại bỏ GRANT SELECT trực tiếp trên Users (chứa PasswordHash nhạy cảm).
--- App chỉ truy cập dữ liệu thông qua SP (WITH EXECUTE AS OWNER) hoặc Views.
--- Views đã lọc/ghấu dữ liệu nhạy cảm (PasswordHash không xuất hiện ở bất kỳ view nào).
+-- App chỉ truy cập dữ liệu thông qua SP (WITH EXECUTE AS OWNER) hoặc các View được
+-- cấp rõ ràng ở dưới. Views đã lọc dữ liệu nhạy cảm (PasswordHash không xuất hiện
+-- ở bất kỳ view nào); các bảng lõi không được cấp SELECT trực tiếp.
 GRANT EXECUTE ON SCHEMA::dbo TO bcm_app_role;
-GRANT SELECT ON  OBJECT::dbo.vw_AvailableCourts  TO bcm_app_role;
--- vw_BookingHistory, vw_AdminDashboard, vw_AllBookings chứa dữ liệu toàn bộ
--- booking/notification → app chỉ truy cập qua SP (sp_GetMyBookings, sp_GetDashboard...).
--- GRANT SELECT trên Views còn lại được cấp qua EXECUTE AS OWNER của SP.
+-- vw_AvailableCourts: public availability (guest search).
+GRANT SELECT ON OBJECT::dbo.vw_AvailableCourts TO bcm_app_role;
+-- vw_AllBookings: administrative booking list for the authenticated manager
+-- booking path. Row-level scope (MANAGER all / COURT_MANAGER owned courts) is
+-- applied by the application SQL using SESSION_CONTEXT on the authenticated
+-- connection — never filtered client-side.
+GRANT SELECT ON OBJECT::dbo.vw_AllBookings TO bcm_app_role;
+-- vw_BookingHistory, vw_AdminDashboard chứa dữ liệu toàn bộ booking → app chỉ
+-- truy cập qua SP (sp_GetMyBookings, sp_GetDashboard...) với EXECUTE AS OWNER.
+-- Ngoài ra: Column-level DENY bên dưới chặn PasswordHash kể cả khi có SELECT bảng;
+-- scope theo chủ sân của vw_AllBookings luôn do application enforce bằng
+-- SESSION_CONTEXT trên connection đã đăng nhập, không dựa vào lọc ở client.
 
 -- Column-level DENY: ngay cả khi có quyền SELECT bảng, PasswordHash vẫn bị chặn
 DENY SELECT ON dbo.Users(PasswordHash) TO bcm_app_role;

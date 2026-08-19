@@ -4,6 +4,9 @@ import type {
   CancelBookingResponse,
   CostEstimateResponse,
   CourtSearchResponse,
+  ManagerBookingAction,
+  ManagerBookingsResponse,
+  ManagerMutationResponse,
   MyBookingsResponse,
 } from '../../shared/types';
 
@@ -128,4 +131,30 @@ export function getMyBookingsRequest(): Promise<MyBookingsResponse> {
  */
 export function cancelBookingRequest(bookingId: string): Promise<CancelBookingResponse> {
   return request<CancelBookingResponse>(`/api/bookings/${encodeURIComponent(bookingId)}/cancel`, { method: 'POST' });
+}
+
+/**
+ * Authenticated MANAGER/COURT_MANAGER booking list (Phase 2.6). Rows come from
+ * dbo.vw_AllBookings on the authenticated SQL session; scope is applied IN SQL
+ * by SESSION_CONTEXT (MANAGER sees all rows, COURT_MANAGER only OwnerId rows),
+ * so the browser never sees another actor's bookings.
+ */
+export function getManagerBookingsRequest(): Promise<ManagerBookingsResponse> {
+  return request<ManagerBookingsResponse>('/api/manager/bookings');
+}
+
+/**
+ * Run one manager booking mutation (approve/reject/cancel/complete) through the
+ * matching contract Stored Procedure. The request carries ONLY the booking id;
+ * the server, SESSION_CONTEXT and SP decide role/ownership/state. The UI must
+ * refetch the manager list from the DB afterwards — this response is only the
+ * success signal.
+ */
+export function managerActionRequest(
+  action: ManagerBookingAction,
+  bookingId: string,
+): Promise<ManagerMutationResponse> {
+  return request<ManagerMutationResponse>(`/api/manager/bookings/${encodeURIComponent(bookingId)}/${action}`, {
+    method: 'POST',
+  });
 }
