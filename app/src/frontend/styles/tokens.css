@@ -1,127 +1,130 @@
 /*
- * BadmintonPro design tokens (source: design/stitch_.../courtmaster_pro/DESIGN.md
- * + login code.html Tailwind config). Visual-only tokens for Phase 2.0 scaffold.
+ * BadmintonPro design tokens.
+ * Source: design/stitch_badminton_court_management_system/courtmaster_pro/DESIGN.md
+ * plus the Tailwind configs embedded in login_premium_polished_v2_badmintonpro,
+ * t_m_s_n_c_u_l_ng_guest_badmintonpro_final, t_ng_quan_h_th_ng_badmintonpro_manager_production_final,
+ * l_ch_s_t_s_n_badmintonpro_final_polish and th_ng_b_o_badmintonpro_production_final_logic_cleaned.
  */
 :root {
-  --color-background: #f8fafc;
-  --color-surface: #ffffff;
-  --color-primary: #00796f;
-  --color-primary-container: #008378;
-  --color-on-primary: #ffffff;
-  --color-on-surface: #171d1c;
-  --color-on-surface-variant: #475569;
-  --color-outline-variant: #bcc9c6;
-  --color-error: #ba1a1a;
+  /* ---- Brand teal scale (from guest/login screens) ---- */
+  --bp-brand-50: #f0fdfa;
+  --bp-brand-100: #ccfbf1;
+  --bp-brand-200: #99f6e4;
+  --bp-brand-300: #5eead4;
+  --bp-brand-400: #2dd4bf;
+  --bp-brand-500: #14b8a6;
+  --bp-brand-600: #0d9488;
+  --bp-brand-700: #00796f;
+  --bp-brand-800: #115e59;
+  --bp-brand-900: #134e4a;
+  --bp-brand-950: #042f2e;
 
-  --font-ui: 'Hanken Grotesk', sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  /* ---- Semantic brand ---- */
+  --bp-color-primary: #00796f;
+  --bp-color-primary-deep: #00685f;
+  --bp-color-primary-container: #008378;
+  --bp-color-on-primary: #ffffff;
+  --bp-color-on-primary-container: #f4fffc;
 
-  --radius-card: 1.125rem;
-  --radius-btn: 0.75rem;
-  --shadow-premium: 0 10px 40px -10px rgba(0, 121, 111, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+  /* ---- Surfaces ---- */
+  --bp-color-background: #f8fafc;
+  --bp-color-surface: #ffffff;
+  --bp-color-surface-lowest: #ffffff;
+  --bp-color-surface-low: #f1f5f9;
+  --bp-color-surface-container: #eaefed;
+  --bp-color-surface-high: #e2e8f0;
+  --bp-color-surface-highest: #dee4e1;
+
+  /* ---- Text ---- */
+  --bp-color-on-surface: #171d1c;
+  --bp-color-on-surface-variant: #475569;
+
+  /* ---- Outline ---- */
+  --bp-color-outline: #94a3b8;
+  --bp-color-outline-variant: #cbd5e1;
+  --bp-color-outline-soft: rgba(203, 213, 225, 0.3);
+
+  /* ---- Error ---- */
+  --bp-color-error: #ba1a1a;
+  --bp-color-error-default: #ef4444;
+  --bp-color-error-container: #fee2e2;
+  --bp-color-on-error-container: #7f1d1d;
+
+  /* ---- Booking status semantics (locked history + booking-management screens) ---- */
+  --bp-status-pending-bg: #fef3c7;
+  --bp-status-pending-fg: #92400e;
+  --bp-status-booked-bg: #dbeafe;
+  --bp-status-booked-fg: #1e40af;
+  --bp-status-completed-bg: #d1fae5;
+  --bp-status-completed-fg: #065f46;
+  --bp-status-cancelled-bg: #f1f5f9;
+  --bp-status-cancelled-fg: #475569;
+  --bp-status-rejected-bg: #ffe4e6;
+  --bp-status-rejected-fg: #be123c;
+
+  /* ---- Typography (DESIGN.md scale) ---- */
+  --bp-font-ui: 'Hanken Grotesk', sans-serif;
+  --bp-font-mono: 'JetBrains Mono', monospace;
+  --bp-text-display-lg: 700 2.25rem/2.75rem var(--bp-font-ui);
+  --bp-text-headline-lg-mobile: 700 1.75rem/2.25rem var(--bp-font-ui);
+  --bp-text-headline-md: 600 1.5rem/2rem var(--bp-font-ui);
+  --bp-text-title-sm: 600 1.125rem/1.5rem var(--bp-font-ui);
+  --bp-text-body-md: 400 1rem/1.5rem var(--bp-font-ui);
+  --bp-text-label-sm: 500 0.8125rem/1rem var(--bp-font-mono);
+
+  /* ---- Spacing (4px base) ---- */
+  --bp-space-base: 0.25rem;
+  --bp-space-xs: 0.5rem;
+  --bp-space-sm: 1rem;
+  --bp-space-md: 1.5rem;
+  --bp-space-lg: 2rem;
+  --bp-space-xl: 3rem;
+  --bp-gutter: 1.5rem;
+  --bp-container-padding: 2rem;
+
+  /* ---- Radius ---- */
+  --bp-radius-sm: 0.25rem;
+  --bp-radius-md: 0.5rem;
+  --bp-radius-lg: 0.75rem;
+  --bp-radius-xl: 1rem;
+  --bp-radius-card: 1.125rem;
+  --bp-radius-2xl: 1.5rem;
+  --bp-radius-full: 9999px;
+
+  /* ---- Shadows ---- */
+  --bp-shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  --bp-shadow-premium: 0 10px 40px -10px rgba(0, 121, 111, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+  --bp-shadow-popover: 0 20px 60px -18px rgba(0, 0, 0, 0.25);
+
+  /* ---- Layout ---- */
+  --bp-sidebar-width: 18rem;
+  --bp-topbar-height: 4rem;
+
+  /* ---- Breakpoints ---- */
+  --bp-bp-sm: 640px;
+  --bp-bp-md: 768px;
+  --bp-bp-lg: 1024px;
+  --bp-bp-xl: 1280px;
 }
 
-* {
-  box-sizing: border-box;
+/* Shimmer loading used by skeletons (from l_ch_s_t_s_n history screen). */
+@keyframes bp-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
-body {
-  margin: 0;
-  font-family: var(--font-ui);
-  background-color: var(--color-background);
-  color: var(--color-on-surface);
-}
-
-.app-shell {
-  min-height: 100vh;
-}
-
-.shell {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 2rem;
-}
-
-.shell-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1.5rem;
-}
-
-.shell-brand {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--color-primary);
-}
-
-.shell-badge {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.05em;
-  color: var(--color-primary);
-  border: 1px solid var(--color-outline-variant);
-  border-radius: 9999px;
-  padding: 0.35rem 0.75rem;
-}
-
-.shell-main {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.card {
-  background: var(--color-surface);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-premium);
-  padding: 1.5rem;
-}
-
-.card-error {
-  border-left: 4px solid var(--color-error);
-}
-
-.card-title {
-  margin: 0 0 1rem;
-  font-size: 1.5rem;
-  font-weight: 600;
-}
-
-.card-note {
-  margin: 0 0 1rem;
-  color: var(--color-on-surface-variant);
-}
-
-.kv {
-  display: grid;
-  grid-template-columns: max-content 1fr;
-  gap: 0.5rem 1.5rem;
-  margin: 0 0 1.5rem;
-}
-
-.kv dt {
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
-  color: var(--color-on-surface-variant);
-}
-
-.kv dd {
-  margin: 0;
-  font-weight: 500;
-}
-
-.btn {
-  font-family: var(--font-ui);
-  font-weight: 600;
-  color: var(--color-on-primary);
-  background: var(--color-primary-container);
-  border: none;
-  border-radius: var(--radius-btn);
-  padding: 0.6rem 1.25rem;
-  cursor: pointer;
-}
-
-.btn:hover {
-  background: var(--color-primary);
+/* Fade/slide-in used by manager dashboard and guest search. */
+@keyframes bp-fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

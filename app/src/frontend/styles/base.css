@@ -1,0 +1,80 @@
+/*
+ * BadmintonPro base/reset layer. Uses design tokens from tokens.css.
+ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--bp-font-ui);
+  background-color: var(--bp-color-background);
+  color: var(--bp-color-on-surface);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+}
+
+input,
+select,
+textarea {
+  font-family: inherit;
+  color: inherit;
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+dl,
+dd {
+  margin: 0;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+/* Utility: JetBrains Mono for technical IDs/codes. */
+.bp-mono {
+  font-family: var(--bp-font-mono);
+}
+
+/* Utility: screen-reader-only. */
+.bp-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Utility: focus ring consistent with the locked Stitch focus style. */
+.bp-focus-ring:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(0, 121, 111, 0.15);
+}
