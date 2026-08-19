@@ -1,4 +1,4 @@
-import type { AuthUser } from '../../shared/types';
+import type { AuthUser, CourtSearchResponse } from '../../shared/types';
 
 /** Server never authenticates on the module itself; it checks the web session cookie. */
 const DEFAULT_HEADERS: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -55,4 +55,18 @@ export async function logoutRequest(): Promise<void> {
   } catch {
     // Idempotent by design; nothing to do here.
   }
+}
+
+/**
+ * Public court availability search (guest-safe, no session required).
+ * Times are local wall-clock strings "YYYY-MM-DDTHH:MM:00" (no timezone).
+ */
+export function searchCourtsRequest(params: {
+  startTime: string;
+  endTime: string;
+  courtId?: string;
+}): Promise<CourtSearchResponse> {
+  const qs = new URLSearchParams({ startTime: params.startTime, endTime: params.endTime });
+  if (params.courtId) qs.set('courtId', params.courtId);
+  return request<CourtSearchResponse>(`/api/courts/available?${qs.toString()}`);
 }

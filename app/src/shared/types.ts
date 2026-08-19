@@ -28,7 +28,7 @@ export interface AuthUser {
   lastLogin: string | null;
 }
 
-/** sp_GetAvailableCourts row (mirror of vw_AvailableCourts columns). */
+/** sp_GetAvailableCourts row (exact columns returned by the procedure). */
 export interface AvailableCourt {
   CourtId: string;
   CourtName: string;
@@ -38,6 +38,21 @@ export interface AvailableCourt {
   PricePerHour: number;
   PricePerThreeHours: number;
   IsAvailable: boolean;
+}
+
+/**
+ * GET /api/courts/available response.
+ * Times are local wall-clock strings ("YYYY-MM-DDTHH:MM:SS", no timezone),
+ * the exact values passed to dbo.sp_GetAvailableCourts as DATETIME2(0).
+ */
+export interface CourtSearchResponse {
+  courts: AvailableCourt[];
+  count: number;
+  window: {
+    startTime: string;
+    endTime: string;
+    courtId: string | null;
+  };
 }
 
 /** sp_GetMyBookings row. */
