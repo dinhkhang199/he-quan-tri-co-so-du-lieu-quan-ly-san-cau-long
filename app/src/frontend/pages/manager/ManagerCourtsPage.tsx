@@ -387,7 +387,7 @@ export function ManagerCourtsPage() {
   }
 
   const filterChips = (
-    <div className="bp-courts__seg" role="group" aria-label="Lọc theo trạng thái sân">
+    <div className="bp-courts-mgr__seg" role="group" aria-label="Lọc theo trạng thái sân">
       {(
         [
           { id: 'ALL', label: 'Tất cả' },
@@ -398,7 +398,7 @@ export function ManagerCourtsPage() {
         <button
           key={c.id}
           type="button"
-          className={['bp-courts__seg-btn', filter === c.id ? 'bp-courts__seg-btn--active' : ''].filter(Boolean).join(' ')}
+          className={['bp-courts-mgr__seg-btn', filter === c.id ? 'bp-courts-mgr__seg-btn--active' : ''].filter(Boolean).join(' ')}
           onClick={() => setFilter(c.id)}
         >
           {c.label}
@@ -413,7 +413,7 @@ export function ManagerCourtsPage() {
         title="Quản lý sân"
         subtitle="Theo dõi và quản lý thông tin các sân trong hệ thống."
         actions={
-          <div className="bp-courts__header-actions">
+          <div className="bp-courts-mgr__header-actions">
             {filterChips}
             <Button variant="primary" icon="add" onClick={openCreate} disabled={busy}>
               Thêm sân mới
@@ -423,15 +423,15 @@ export function ManagerCourtsPage() {
       />
 
       {loadState === 'loading' ? (
-        <div className="bp-courts__grid" aria-hidden="true">
+        <div className="bp-courts-mgr__grid" aria-hidden="true">
           {Array.from({ length: 4 }, (_, i) => (
-            <div className="bp-courts__skeleton" key={i}>
+            <div className="bp-courts-mgr__skeleton" key={i}>
               <LoadingSkeleton variant="card" />
             </div>
           ))}
         </div>
       ) : loadState === 'error' ? (
-        <div className="bp-courts__card">
+        <div className="bp-courts-mgr__card">
           <EmptyState
             icon="cloud_off"
             title="Không tải được danh sách sân"
@@ -453,7 +453,7 @@ export function ManagerCourtsPage() {
           ) : null}
 
           {filtered.length === 0 ? (
-            <div className="bp-courts__card">
+            <div className="bp-courts-mgr__card">
               <EmptyState
                 icon="sports_badminton"
                 title={courts.length === 0 ? 'Chưa có sân' : 'Không có kết quả phù hợp'}
@@ -465,7 +465,7 @@ export function ManagerCourtsPage() {
               />
             </div>
           ) : (
-            <div className="bp-courts__grid">
+            <div className="bp-courts-mgr__grid">
               {filtered.map((court) => (
                 <CourtCard
                   key={court.CourtId}
@@ -478,7 +478,7 @@ export function ManagerCourtsPage() {
             </div>
           )}
 
-          <div className="bp-courts__footer">
+          <div className="bp-courts-mgr__footer">
             <span>
               Hiển thị {filtered.length} trong {courts.length} sân
             </span>

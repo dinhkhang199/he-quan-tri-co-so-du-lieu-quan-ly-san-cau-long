@@ -1,46 +1,65 @@
 /*
- * BadmintonPro court search screen (Phase 2.3).
- * Layout follows the locked t_m_s_n_c_u_l_ng_guest_badmintonpro_final export:
- * 12-col grid -> filter aside (left) + results list (right); only real
- * dbo.sp_GetAvailableCourts columns are rendered. "Khu vực" dropdown from the
- * prototype is intentionally omitted (no district/area column exists in the
- * DB contract, so it cannot be a real filter).
+ * BadmintonPro court search screen (Phase 2.3 & 2.11 visual remediation).
+ * Matches locked Stitch export: t_m_s_n_c_u_l_ng_guest_badmintonpro_final
  */
 
-/* ---------- Page + grid ---------- */
-.bp-courses {
+/* ---------- Page + Grid Layout ---------- */
+.bp-courts {
   display: flex;
   flex-direction: column;
   gap: var(--bp-space-md);
+  width: 100%;
 }
 
 .bp-courts__grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--bp-space-md);
+  gap: var(--bp-gutter);
   align-items: start;
+  width: 100%;
 }
 
 @media (min-width: 1024px) {
   .bp-courts__grid {
-    grid-template-columns: minmax(16rem, 21rem) minmax(0, 1fr);
+    grid-template-columns: 20rem minmax(0, 1fr);
+    gap: var(--bp-gutter);
+  }
+}
+
+@media (min-width: 1280px) {
+  .bp-courts__grid {
+    grid-template-columns: 22rem minmax(0, 1fr);
     gap: var(--bp-gutter);
   }
 }
 
 .bp-courts__aside {
-  position: sticky;
-  top: 6rem;
-  z-index: 10;
+  width: 100%;
 }
 
-/* ---------- Filter panel ---------- */
+@media (min-width: 1024px) {
+  .bp-courts__aside {
+    position: sticky;
+    top: 5.5rem;
+    z-index: 10;
+  }
+}
+
+.bp-courts__results {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-width: 0;
+  width: 100%;
+}
+
+/* ---------- Filter Panel ---------- */
 .bp-courts__filter {
   background: var(--bp-color-surface-lowest);
-  border: 1px solid var(--bp-color-outline-soft);
-  border-radius: var(--bp-radius-xl);
-  box-shadow: var(--bp-shadow-premium);
-  padding: var(--bp-space-md);
+  border: 1px solid rgba(203, 213, 225, 0.4);
+  border-radius: var(--bp-radius-card);
+  box-shadow: 0 4px 20px -8px rgba(0, 121, 111, 0.08), 0 1px 3px rgba(0, 0, 0, 0.03);
+  padding: 1.5rem;
 }
 
 .bp-courts__filter-title {
@@ -50,7 +69,7 @@
   font-size: 1.125rem;
   font-weight: 600;
   color: var(--bp-color-on-surface);
-  margin-bottom: var(--bp-space-md);
+  margin-bottom: 1.5rem;
 }
 
 .bp-courts__field {
@@ -114,7 +133,7 @@
   border-radius: var(--bp-radius-md);
   background: var(--bp-color-surface);
   color: var(--bp-color-on-surface);
-  font-size: 1rem;
+  font-size: 0.9375rem;
   transition:
     border-color 0.15s ease,
     box-shadow 0.15s ease;
@@ -152,14 +171,7 @@ select.bp-courts__input {
   margin-top: 0.5rem;
 }
 
-/* ---------- Results ---------- */
-.bp-courts__results {
-  display: flex;
-  flex-direction: column;
-  gap: var(--bp-space-sm);
-  min-width: 0;
-}
-
+/* ---------- Results Header & Meta ---------- */
 .bp-courts__loading {
   display: flex;
   flex-direction: column;
@@ -168,15 +180,17 @@ select.bp-courts__input {
 
 .bp-courts__meta {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   gap: var(--bp-space-sm);
   flex-wrap: wrap;
+  padding-bottom: 0.25rem;
 }
 
 .bp-courts__found {
   color: var(--bp-color-on-surface-variant);
   font-weight: 500;
+  font-size: 0.9375rem;
 }
 
 .bp-courts__sort {
@@ -194,7 +208,7 @@ select.bp-courts__input {
   background: transparent;
   border: none;
   color: var(--bp-color-primary);
-  font-weight: 500;
+  font-weight: 600;
   font-size: 0.875rem;
   font-family: var(--bp-font-ui);
   cursor: pointer;
@@ -208,32 +222,32 @@ select.bp-courts__input {
 .bp-courts__list {
   display: flex;
   flex-direction: column;
-  gap: var(--bp-space-md);
+  gap: 1.25rem;
 }
 
-/* ---------- Court card ---------- */
+/* ---------- Court Card (Stitch Component) ---------- */
 .bp-court-card {
   display: flex;
   flex-direction: column;
   background: var(--bp-color-surface-lowest);
-  border: 1px solid var(--bp-color-outline-soft);
-  border-radius: var(--bp-radius-xl);
-  box-shadow: var(--bp-shadow-card);
+  border: 1px solid rgba(203, 213, 225, 0.4);
+  border-radius: var(--bp-radius-card);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
   overflow: hidden;
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  width: 100%;
 }
 
 @media (min-width: 768px) {
   .bp-court-card {
     flex-direction: row;
+    min-height: 14rem;
   }
 }
 
 .bp-court-card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--bp-shadow-premium);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 40px -10px rgba(0, 121, 111, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .bp-court-card__media {
@@ -253,8 +267,6 @@ select.bp-courts__input {
   }
 }
 
-/* Local fallback treatment for courts without an image (the availability
-   procedure does not return ImageUrl and seed ImageUrl is NULL). */
 .bp-court-card__media-fallback {
   position: absolute;
   inset: 0;
@@ -263,11 +275,16 @@ select.bp-courts__input {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  color: rgba(255, 255, 255, 0.92);
+  color: rgba(255, 255, 255, 0.95);
   background:
-    radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
-    linear-gradient(150deg, var(--bp-brand-950) 0%, var(--bp-brand-800) 55%, var(--bp-color-primary) 100%);
+    radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(135deg, var(--bp-brand-950) 0%, var(--bp-brand-800) 45%, var(--bp-color-primary) 100%);
   background-size: 24px 24px, 100% 100%;
+  transition: transform 0.5s ease;
+}
+
+.bp-court-card:hover .bp-court-card__media-fallback {
+  transform: scale(1.04);
 }
 
 .bp-court-card__media-fallback span {
@@ -285,13 +302,14 @@ select.bp-courts__input {
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
-  padding: 0.375rem 0.75rem;
+  padding: 0.25rem 0.75rem;
   border-radius: var(--bp-radius-full);
   background: rgba(240, 253, 250, 0.92);
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(8px);
   color: var(--bp-brand-700);
   font-size: 0.75rem;
   font-weight: 600;
+  z-index: 2;
 }
 
 .bp-court-card__dot {
@@ -306,8 +324,13 @@ select.bp-courts__input {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: var(--bp-space-md);
+  padding: 1.5rem;
   min-width: 0;
+}
+
+.bp-court-card__main-info {
+  display: flex;
+  flex-direction: column;
 }
 
 .bp-court-card__head {
@@ -315,13 +338,14 @@ select.bp-courts__input {
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--bp-space-sm);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.375rem;
 }
 
 .bp-court-card__name {
   font-size: 1.125rem;
   font-weight: 600;
   color: var(--bp-color-on-surface);
+  line-height: 1.35;
 }
 
 .bp-court-card__price {
@@ -347,7 +371,7 @@ select.bp-courts__input {
   gap: 0.375rem;
   color: var(--bp-color-on-surface-variant);
   font-size: 0.875rem;
-  line-height: 1.5;
+  line-height: 1.45;
   margin-bottom: 0.75rem;
 }
 
@@ -355,23 +379,20 @@ select.bp-courts__input {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.875rem;
 }
 
 .bp-court-card__chip {
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
-  padding: 0.375rem 0.625rem;
+  padding: 0.25rem 0.625rem;
   border-radius: var(--bp-radius-md);
   background: var(--bp-color-surface);
-  border: 1px solid var(--bp-color-outline-soft);
+  border: 1px solid rgba(203, 213, 225, 0.4);
   color: var(--bp-color-on-surface-variant);
   font-size: 0.75rem;
-}
-
-.bp-court-card__chip-sub {
-  opacity: 0.75;
+  font-weight: 500;
 }
 
 .bp-court-card__foot {
@@ -381,32 +402,51 @@ select.bp-courts__input {
   gap: var(--bp-space-sm);
   flex-wrap: wrap;
   padding-top: 1rem;
-  border-top: 1px solid var(--bp-color-outline-soft);
+  border-top: 1px solid rgba(203, 213, 225, 0.3);
   margin-top: auto;
 }
 
-/* CTA keeps the button sizing/shape (as a styled react-router link). */
+.bp-court-card__total {
+  display: flex;
+  align-items: baseline;
+  gap: 0.375rem;
+  font-size: 0.875rem;
+  color: var(--bp-color-on-surface-variant);
+}
+
+.bp-court-card__total-amount {
+  color: var(--bp-color-on-surface);
+  font-weight: 700;
+}
+
+.bp-court-card__total-duration {
+  font-size: 0.8125rem;
+  color: var(--bp-color-on-surface-variant);
+}
+
+/* CTA */
 .bp-court-card__cta {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.375rem;
-  padding: 0.5625rem 1.125rem;
+  padding: 0.5rem 1.25rem;
   font-family: var(--bp-font-ui);
-  font-weight: 500;
-  font-size: 0.9375rem;
+  font-weight: 600;
+  font-size: 0.875rem;
   border-radius: var(--bp-radius-md);
-  transition:
-    background-color 0.15s ease,
-    color 0.15s ease;
+  transition: all 0.15s ease;
 }
 
-/* Guest mode CTA (locked prototype: neutral surface + lock icon). */
+/* Guest mode CTA */
 .bp-court-card__cta--login {
-  background: var(--bp-color-surface-variant);
+  background: var(--bp-color-surface-low);
   color: var(--bp-color-on-surface-variant);
+  border: 1px solid rgba(203, 213, 225, 0.4);
 }
 
 .bp-court-card__cta--login:hover {
+  background: #e2e8f0;
   color: var(--bp-color-primary);
+  border-color: var(--bp-color-primary);
 }

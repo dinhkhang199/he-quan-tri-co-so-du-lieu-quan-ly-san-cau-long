@@ -5,7 +5,7 @@
 /* ---------- Shared content column ---------- */
 .bp-content {
   width: 100%;
-  max-width: 80rem;
+  max-width: 90rem;
   margin: 0 auto;
   padding: var(--bp-space-lg) var(--bp-container-padding);
 }
@@ -262,7 +262,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--bp-space-sm);
-  max-width: 80rem;
+  max-width: 90rem;
   margin: 0 auto;
   padding: 0.75rem var(--bp-container-padding);
 }
@@ -354,7 +354,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--bp-space-sm);
-  max-width: 80rem;
+  max-width: 90rem;
   margin: 0 auto;
   padding: 0.75rem var(--bp-container-padding);
 }

@@ -183,7 +183,7 @@ export function CourtsPage() {
   const loading = phase === 'loading';
 
   return (
-    <div className="bp-courses">
+    <div className="bp-courts">
       <PageHeader title="Tìm sân cầu lông" subtitle="Khám phá và tìm sân cầu lông còn trống tại khu vực của bạn." />
 
       <div className="bp-courts__grid">

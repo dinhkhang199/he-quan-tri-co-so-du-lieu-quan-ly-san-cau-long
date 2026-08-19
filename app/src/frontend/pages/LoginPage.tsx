@@ -45,25 +45,30 @@ export function LoginPage() {
     <div className="bp-login">
       {/* Left visual area (desktop, >= 768px) */}
       <div className="bp-login__hero" aria-hidden="true">
+        <div className="bp-login__court-lines" />
         <div className="bp-login__hero-brand">
           <BrandLogo showName={false} size="lg" />
         </div>
+
+        {/* Floating Glass Chips in center visual area */}
+        <div className="bp-login__floating-chips">
+          <span className="bp-login__chip bp-login__chip--pos-1 bp-login__chip--float-1">
+            <BpIcon name="calendar_month" size={18} />
+            Quản lý lịch sân
+          </span>
+          <span className="bp-login__chip bp-login__chip--pos-2 bp-login__chip--float-2">
+            <BpIcon name="flash_on" size={18} />
+            Đặt sân nhanh chóng
+          </span>
+          <span className="bp-login__chip bp-login__chip--pos-3 bp-login__chip--float-3">
+            <BpIcon name="schedule" size={18} />
+            06:00 — 22:00
+          </span>
+        </div>
+
+        {/* Bottom glassmorphism copy card */}
         <div className="bp-login__hero-bottom">
-          <div className="bp-login__chips">
-            <span className="bp-login__chip bp-login__chip--float-1">
-              <BpIcon name="calendar_month" size={18} />
-              Quản lý lịch sân
-            </span>
-            <span className="bp-login__chip bp-login__chip--float-2">
-              <BpIcon name="flash_on" size={18} />
-              Đặt sân nhanh chóng
-            </span>
-            <span className="bp-login__chip bp-login__chip--float-3">
-              <BpIcon name="schedule" size={18} />
-              06:00 — 22:00
-            </span>
-          </div>
-          <div className="bp-login__hero-copy">
+          <div className="bp-login__glass-panel">
             <h1 className="bp-login__hero-title">
               Quản lý sân thông minh.
               <br />

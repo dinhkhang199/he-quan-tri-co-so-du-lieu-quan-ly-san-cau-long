@@ -14,14 +14,14 @@
 }
 
 /* ---------- Header actions: segmented filter + add button ---------- */
-.bp-courts__header-actions {
+.bp-courts-mgr__header-actions {
   display: flex;
   align-items: center;
   gap: var(--bp-space-sm);
   flex-wrap: wrap;
 }
 
-.bp-courts__seg {
+.bp-courts-mgr__seg {
   display: flex;
   align-items: center;
   gap: 0.25rem;
@@ -31,7 +31,7 @@
   border: 1px solid var(--bp-color-outline-soft);
 }
 
-.bp-courts__seg-btn {
+.bp-courts-mgr__seg-btn {
   padding: 0.375rem 0.875rem;
   border: none;
   border-radius: var(--bp-radius-sm);
@@ -47,54 +47,54 @@
     box-shadow 0.15s ease;
 }
 
-.bp-courts__seg-btn:hover:not(.bp-courts__seg-btn--active) {
+.bp-courts-mgr__seg-btn:hover:not(.bp-courts-mgr__seg-btn--active) {
   color: var(--bp-color-on-surface);
 }
 
-.bp-courts__seg-btn--active {
+.bp-courts-mgr__seg-btn--active {
   background: var(--bp-color-surface);
   color: var(--bp-color-on-surface);
   box-shadow: var(--bp-shadow-card);
 }
 
 /* ---------- Card grid ---------- */
-.bp-courts__grid {
+.bp-courts-mgr__grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--bp-space-md);
 }
 
 @media (min-width: 640px) {
-  .bp-courts__grid {
+  .bp-courts-mgr__grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (min-width: 1024px) {
-  .bp-courts__grid {
+  .bp-courts-mgr__grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
 @media (min-width: 1280px) {
-  .bp-courts__grid {
+  .bp-courts-mgr__grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
-.bp-courts__card {
+.bp-courts-mgr__card {
   border-radius: var(--bp-radius-xl);
   box-shadow: var(--bp-shadow-card);
   background: var(--bp-color-surface-lowest);
   overflow: hidden;
 }
 
-.bp-courts__skeleton {
+.bp-courts-mgr__skeleton {
   border-radius: var(--bp-radius-card);
   overflow: hidden;
 }
 
-.bp-courts__skeleton .bp-skeleton--card {
+.bp-courts-mgr__skeleton .bp-skeleton--card {
   border: 1px solid var(--bp-color-outline-soft);
   box-shadow: var(--bp-shadow-card);
   min-height: 15rem;
@@ -344,7 +344,7 @@
 }
 
 /* ---------- List footer ---------- */
-.bp-courts__footer {
+.bp-courts-mgr__footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
