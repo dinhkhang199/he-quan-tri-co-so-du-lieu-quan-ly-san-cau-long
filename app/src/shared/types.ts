@@ -121,6 +121,22 @@ export interface DashboardTopCourt {
   Revenue: number;
 }
 
+/**
+ * GET /api/manager/dashboard response — dbo.sp_GetDashboard's three result sets
+ * in exact order (overview, daily, topCourts). Scope is applied INSIDE SQL
+ * Server by the procedure: MANAGER is system-wide, COURT_MANAGER only counts
+ * courts where OwnerId = SESSION_CONTEXT actor; ActiveUsers is the DB-wide
+ * count of IsActive = 1 accounts in both cases. TheoreticalRevenue is the sum
+ * of TotalCost for BOOKED + COMPLETED bookings (booking value, not money
+ * received). `Date` serializes as an ISO string carrying the local wall-clock
+ * day digits — string-slice for display, do not re-interpret.
+ */
+export interface ManagerDashboardResponse {
+  overview: DashboardOverview;
+  daily: DashboardDailyRevenue[];
+  topCourts: DashboardTopCourt[];
+}
+
 /** sp_BookCourt output parameters. */
 export interface BookCourtOutput {
   BookingId: string;

@@ -10,6 +10,7 @@ import type {
   ManagerCourtInput,
   ManagerCourtMutationResponse,
   ManagerCourtsResponse,
+  ManagerDashboardResponse,
   ManagerMutationResponse,
   MarkNotificationReadResponse,
   MyBookingsResponse,
@@ -235,4 +236,14 @@ export function markNotificationReadRequest(notificationId: string): Promise<Mar
     `/api/notifications/${encodeURIComponent(notificationId)}/read`,
     { method: 'POST' },
   );
+}
+
+/**
+ * Authenticated MANAGER/COURT_MANAGER dashboard (Phase 2.9). Rows come from
+ * dbo.sp_GetDashboard on the authenticated SQL session; scope is applied INSIDE
+ * SQL Server (MANAGER system-wide, COURT_MANAGER only OwnerId courts), so the
+ * browser only ever receives the actor's correctly scoped aggregates.
+ */
+export function getManagerDashboardRequest(): Promise<ManagerDashboardResponse> {
+  return request<ManagerDashboardResponse>('/api/manager/dashboard');
 }

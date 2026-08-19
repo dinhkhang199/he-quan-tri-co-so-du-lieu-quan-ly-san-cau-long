@@ -791,6 +791,7 @@ BEGIN
         FROM dbo.Bookings
         WHERE Status IN (N'BOOKED', N'COMPLETED')
           AND StartTime >= DATEADD(DAY, -6, CAST(SYSDATETIME() AS DATE))
+          AND StartTime < DATEADD(DAY, 1, CAST(SYSDATETIME() AS DATE))
         GROUP BY CAST(StartTime AS DATE)
         ORDER BY Date;
 
@@ -812,6 +813,7 @@ BEGIN
         FROM dbo.Bookings b INNER JOIN dbo.Courts c ON c.CourtId = b.CourtId
         WHERE c.OwnerId = @SessionUserId AND b.Status IN (N'BOOKED', N'COMPLETED')
           AND b.StartTime >= DATEADD(DAY, -6, CAST(SYSDATETIME() AS DATE))
+          AND b.StartTime < DATEADD(DAY, 1, CAST(SYSDATETIME() AS DATE))
         GROUP BY CAST(b.StartTime AS DATE)
         ORDER BY Date;
 

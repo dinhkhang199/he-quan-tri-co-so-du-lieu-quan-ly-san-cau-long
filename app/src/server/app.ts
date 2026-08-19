@@ -6,6 +6,7 @@ import { createCourtsRouter } from './routes/courts.js';
 import { createBookingsRouter } from './routes/bookings.js';
 import { createManagerRouter } from './routes/manager.js';
 import { createManagerCourtsRouter } from './routes/managerCourts.js';
+import { createManagerDashboardRouter } from './routes/managerDashboard.js';
 import { createNotificationsRouter } from './routes/notifications.js';
 import { createSessionMiddleware } from './middleware/session.js';
 import { errorHandler } from './middleware/errorHandler.js';
@@ -24,6 +25,7 @@ export function createApp(cfg: AppConfig, sessionDb: SessionDb): express.Express
   app.use('/api/bookings', createBookingsRouter(sessionDb));
   app.use('/api/manager/bookings', createManagerRouter(sessionDb));
   app.use('/api/manager/courts', createManagerCourtsRouter(sessionDb));
+  app.use('/api/manager/dashboard', createManagerDashboardRouter(sessionDb));
   app.use('/api/notifications', createNotificationsRouter(sessionDb));
 
   app.use('/api', (_req, res) => {
