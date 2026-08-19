@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import type { UserRole } from '../../shared/contract';
 import { ContentShell } from './ContentShell';
 import { BrandLogo } from '../components/BrandLogo';
 import { BpIcon } from '../components/BpIcon';
 import { SearchInput } from '../components/Input';
+import { useAuth } from '../auth/AuthContext';
 
 interface ManagerNavItem {
   to: string;
@@ -36,6 +37,20 @@ interface ManagerShellProps {
 export function ManagerShell({ role }: ManagerShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const scope = SCOPE_LABELS[role];
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login', { replace: true });
+  };
+
+  const logoutControl = (
+    <button className="bp-manager__logout" type="button" onClick={handleLogout}>
+      <BpIcon name="logout" size={20} aria-hidden="true" />
+      <span>Đăng xuất</span>
+    </button>
+  );
 
   return (
     <div className="bp-manager">
@@ -59,12 +74,7 @@ export function ManagerShell({ role }: ManagerShellProps) {
             </NavLink>
           ))}
         </nav>
-        <div className="bp-manager__footer">
-          <NavLink to="/login" className="bp-manager__logout">
-            <BpIcon name="logout" size={20} aria-hidden="true" />
-            <span>Đăng xuất</span>
-          </NavLink>
-        </div>
+        <div className="bp-manager__footer">{logoutControl}</div>
       </aside>
 
       {/* Mobile overlay sidebar */}
@@ -91,12 +101,7 @@ export function ManagerShell({ role }: ManagerShellProps) {
             </NavLink>
           ))}
         </nav>
-        <div className="bp-manager__footer">
-          <NavLink to="/login" className="bp-manager__logout">
-            <BpIcon name="logout" size={20} aria-hidden="true" />
-            <span>Đăng xuất</span>
-          </NavLink>
-        </div>
+        <div className="bp-manager__footer">{logoutControl}</div>
       </aside>
 
       <div className="bp-manager__main">

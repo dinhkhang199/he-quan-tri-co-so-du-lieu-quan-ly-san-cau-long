@@ -15,6 +15,19 @@ export interface LoginResult {
   LastLogin: Date | null;
 }
 
+/**
+ * Safe authenticated user exposed by the auth API and stored in the Express
+ * session. `lastLogin` is the ISO-8601 wire format (the raw SQL value is a
+ * datetime2, which serializes to a string across HTTP/session storage).
+ */
+export interface AuthUser {
+  userId: string;
+  username: string;
+  role: UserRole;
+  isActive: boolean;
+  lastLogin: string | null;
+}
+
 /** sp_GetAvailableCourts row (mirror of vw_AvailableCourts columns). */
 export interface AvailableCourt {
   CourtId: string;

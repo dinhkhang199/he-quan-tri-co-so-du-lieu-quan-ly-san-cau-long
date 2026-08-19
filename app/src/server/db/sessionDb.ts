@@ -29,6 +29,11 @@ interface SessionConnection {
   queue: Promise<unknown>;
 }
 
+export interface SessionContextValues {
+  userId: string | null;
+  role: string | null;
+}
+
 export class SessionDb {
   private readonly sessions = new Map<string, SessionConnection>();
   private readonly cfg: AppConfig;
@@ -37,26 +42,103 @@ export class SessionDb {
     this.cfg = cfg;
   }
 
-  /** Run a callback on the session's dedicated connection, serialized. */
-  async withConnection<T>(sessionId: string, fn: (conn: sql.ConnectionPool) => Promise<T>): Promise<T> {
-    const holder = await this.acquire(sessionId);
+  /**
+   * Create a fresh dedicated connection for a new authenticated session and run sp_Login.
+   * This is the ONLY method that creates a new SessionDb connection pool.
+   * If `fn` fails, the newly created connection is immediately disposed.
+   */
+  async createSession<T>(sessionId: string, fn: (conn: sql.ConnectionPool) => Promise<T>): Promise<T> {
+    // If an old connection exists under this sessionId, close it first.
+    await this.closeSession(sessionId).catch(() => undefined);
+
+    const connConfig = buildSqlConfig(this.cfg);
+    // Dedicated single-connection pool for the whole session. min = max = 1 keeps
+    // the one connection (and its SESSION_CONTEXT) alive for the session lifetime;
+    // tarn only reaps idle connections beyond the min, so this one is never closed
+    // between requests (idleTimeoutMillis must be > 0 for tarn, hence 30000).
+    connConfig.pool = { ...connConfig.pool, max: 1, min: 1, idleTimeoutMillis: 30000 };
+    const conn = new sql.ConnectionPool(connConfig);
+    await conn.connect();
+
+    const holder: SessionConnection = { conn, queue: Promise.resolve() };
+    this.sessions.set(sessionId, holder);
+
+    try {
+      const result = await fn(conn);
+      return result;
+    } catch (err) {
+      await this.closeSession(sessionId).catch(() => undefined);
+      throw err;
+    }
+  }
+
+  /**
+   * Run a callback on an EXISTING dedicated session connection, serialized.
+   * This NEVER creates a new connection, NEVER reconnects, and NEVER rebuilds context.
+   * If no live connection exists for `sessionId`, throws an Error.
+   */
+  async withExistingConnection<T>(sessionId: string, fn: (conn: sql.ConnectionPool) => Promise<T>): Promise<T> {
+    const holder = this.sessions.get(sessionId);
+    if (!holder || !holder.conn.connected) {
+      throw new Error('No active SQL session connection');
+    }
     const run = holder.queue.then(() => fn(holder.conn));
     holder.queue = run.catch(() => undefined);
     return run;
   }
 
-  /** Create the dedicated connection for a session on first use. */
-  private async acquire(sessionId: string): Promise<SessionConnection> {
-    const existing = this.sessions.get(sessionId);
-    if (existing) return existing;
+  /** Standard access for authenticated calls; requires an existing connection. */
+  async withConnection<T>(sessionId: string, fn: (conn: sql.ConnectionPool) => Promise<T>): Promise<T> {
+    return this.withExistingConnection(sessionId, fn);
+  }
 
-    const connConfig = buildSqlConfig(this.cfg);
-    connConfig.pool = { ...connConfig.pool, max: 1, min: 1, idleTimeoutMillis: 0 };
-    const conn = new sql.ConnectionPool(connConfig);
-    await conn.connect();
-    const holder: SessionConnection = { conn, queue: Promise.resolve() };
-    this.sessions.set(sessionId, holder);
-    return holder;
+  /**
+   * Probes the actual SQL SESSION_CONTEXT on the existing dedicated connection.
+   * NEVER creates a connection. Returns { userId, role } read directly from SQL.
+   * If connection is missing or query fails, closes the session and returns null.
+   */
+  async getSessionContext(sessionId: string): Promise<SessionContextValues | null> {
+    try {
+      return await this.withExistingConnection(sessionId, async (conn) => {
+        const result = await conn.request().query<{ UserId: string | null; Role: string | null }>(
+          `SELECT
+            CONVERT(nvarchar(36), SESSION_CONTEXT(N'UserId')) AS UserId,
+            CONVERT(nvarchar(32), SESSION_CONTEXT(N'Role')) AS Role;`
+        );
+        const row = result.recordset[0];
+        return {
+          userId: row?.UserId ?? null,
+          role: row?.Role ?? null,
+        };
+      });
+    } catch {
+      await this.closeSession(sessionId).catch(() => undefined);
+      return null;
+    }
+  }
+
+  /**
+   * Verifies that the existing dedicated connection's SESSION_CONTEXT matches expected values.
+   * Returns true ONLY if:
+   * 1. A live SessionDb entry exists.
+   * 2. SQL returns non-null UserId matching expectedUserId (case-insensitive).
+   * 3. SQL returns non-null Role matching expectedRole exactly.
+   * If verification fails for any reason, closes/evicts the session and returns false.
+   */
+  async verifySessionContext(sessionId: string, expectedUserId: string, expectedRole: string): Promise<boolean> {
+    const ctx = await this.getSessionContext(sessionId);
+    if (!ctx || !ctx.userId || !ctx.role) {
+      await this.closeSession(sessionId).catch(() => undefined);
+      return false;
+    }
+    const matches =
+      ctx.userId.toLowerCase() === expectedUserId.toLowerCase() &&
+      ctx.role === expectedRole;
+    if (!matches) {
+      await this.closeSession(sessionId).catch(() => undefined);
+      return false;
+    }
+    return true;
   }
 
   /** Close the session's dedicated connection and evict it (discards SESSION_CONTEXT). */
@@ -65,7 +147,17 @@ export class SessionDb {
     if (!holder) return;
     this.sessions.delete(sessionId);
     await holder.queue.catch(() => undefined);
-    await holder.conn.close();
+    try {
+      await holder.conn.close();
+    } catch {
+      // Best-effort close
+    }
+  }
+
+  /** True when a live dedicated connection is still registered for this session. */
+  hasSession(sessionId: string): boolean {
+    const holder = this.sessions.get(sessionId);
+    return Boolean(holder && holder.conn.connected);
   }
 
   /** Number of live session connections (diagnostics/health). */

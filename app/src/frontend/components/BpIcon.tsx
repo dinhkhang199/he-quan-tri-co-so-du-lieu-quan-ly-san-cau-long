@@ -7,8 +7,31 @@ interface BpIconProps {
   label?: string;
 }
 
-/** Material Symbols Outlined wrapper (locked Stitch icon set). */
+/**
+ * Material Symbols Outlined wrapper (locked Stitch icon set).
+ * Handles 'sports_badminton' with a crisp inline SVG shuttlecock matching the
+ * locked Stitch brand mark (avoids broken font ligatures in Material Symbols).
+ */
 export function BpIcon({ name, filled = false, size = 24, className, label }: BpIconProps) {
+  if (name === 'sports_badminton') {
+    const pixelSize = typeof size === 'number' ? size : parseInt(String(size), 10) || 24;
+    return (
+      <svg
+        viewBox="0 0 24 24"
+        width={pixelSize}
+        height={pixelSize}
+        className={`bp-icon bp-icon--badminton${className ? ` ${className}` : ''}`}
+        fill="currentColor"
+        role={label ? 'img' : undefined}
+        aria-label={label}
+        aria-hidden={label ? undefined : true}
+        style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0 }}
+      >
+        <path d="M12 2C11.6 2 11.2 2.3 11 2.7L6.8 12.8C6.6 13.3 6.8 13.9 7.3 14.2L10.5 16.1C10.7 16.2 11 16.3 11.2 16.3H12.8C13 16.3 13.3 16.2 13.5 16.1L16.7 14.2C17.2 13.9 17.4 13.3 17.2 12.8L13 2.7C12.8 2.3 12.4 2 12 2ZM12 4.6L14.7 11.5H9.3L12 4.6ZM8.5 13.5H15.5L14 14.4H10L8.5 13.5ZM12 17.5C10.6 17.5 9.5 18.6 9.5 20C9.5 21.4 10.6 22.5 12 22.5C13.4 22.5 14.5 21.4 14.5 20C14.5 18.6 13.4 17.5 12 17.5Z" />
+      </svg>
+    );
+  }
+
   return (
     <span
       className={`material-symbols-outlined bp-icon${filled ? ' bp-icon--filled' : ''}${className ? ` ${className}` : ''}`}

@@ -1,7 +1,8 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { ContentShell } from './ContentShell';
 import { BrandLogo } from '../components/BrandLogo';
 import { BpIcon } from '../components/BpIcon';
+import { useAuth } from '../auth/AuthContext';
 
 interface CustomerNavItem {
   to: string;
@@ -16,6 +17,14 @@ const CUSTOMER_NAV: CustomerNavItem[] = [
 
 /** Locked customer shell: slim top navbar over a centered content column. */
 export function CustomerShell() {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login', { replace: true });
+  };
+
   return (
     <div className="bp-customer">
       <header className="bp-customer__topbar">
@@ -42,8 +51,8 @@ export function CustomerShell() {
             <NavLink to="/notifications" className="bp-icon-btn" aria-label="Thông báo">
               <BpIcon name="notifications" size={22} aria-hidden="true" />
             </NavLink>
-            <button className="bp-icon-btn" aria-label="Tài khoản">
-              <BpIcon name="account_circle" size={22} aria-hidden="true" />
+            <button className="bp-icon-btn" type="button" aria-label="Đăng xuất" title="Đăng xuất" onClick={handleLogout}>
+              <BpIcon name="logout" size={22} aria-hidden="true" />
             </button>
           </div>
         </div>

@@ -1,6 +1,9 @@
 import session from 'express-session';
 import type { AppConfig } from '../config.js';
 
+/** Cookie name for the app web session (also used to clear it on logout). */
+export const SESSION_COOKIE_NAME = 'badmintonpro.sid';
+
 /**
  * HTTP app-session cookie.
  * The SQL SESSION_CONTEXT binding happens inside SessionDb keyed by req.session.id;
@@ -9,7 +12,7 @@ import type { AppConfig } from '../config.js';
 export function createSessionMiddleware(cfg: AppConfig) {
   return session({
     secret: cfg.sessionSecret,
-    name: 'badmintonpro.sid',
+    name: SESSION_COOKIE_NAME,
     resave: false,
     saveUninitialized: false,
     cookie: {

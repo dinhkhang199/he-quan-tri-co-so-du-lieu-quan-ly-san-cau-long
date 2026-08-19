@@ -13,7 +13,7 @@ interface BrandLogoProps {
  * matching the locked Stitch shells.
  */
 export function BrandLogo({ showName = true, size = 'md', className }: BrandLogoProps) {
-  const mark = size === 'lg' ? 34 : size === 'sm' ? 20 : 28;
+  const mark = size === 'lg' ? 24 : size === 'sm' ? 14 : 18;
   return (
     <div className={`bp-brand bp-brand--${size}${className ? ` ${className}` : ''}`}>
       <span className="bp-brand__mark">
