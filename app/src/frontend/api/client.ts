@@ -1,4 +1,11 @@
-import type { AuthUser, BookingCreateResponse, CostEstimateResponse, CourtSearchResponse } from '../../shared/types';
+import type {
+  AuthUser,
+  BookingCreateResponse,
+  CancelBookingResponse,
+  CostEstimateResponse,
+  CourtSearchResponse,
+  MyBookingsResponse,
+} from '../../shared/types';
 
 /** Server never authenticates on the module itself; it checks the web session cookie. */
 const DEFAULT_HEADERS: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -101,4 +108,24 @@ export function costEstimateRequest(params: {
 }): Promise<CostEstimateResponse> {
   const qs = new URLSearchParams({ courtId: params.courtId, startTime: params.startTime, endTime: params.endTime });
   return request<CostEstimateResponse>(`/api/bookings/estimate?${qs.toString()}`);
+}
+
+/**
+ * Authenticated CUSTOMER booking history. Rows come from dbo.sp_GetMyBookings on
+ * the authenticated SQL session; the server derives the actor from the session,
+ * never from the client. Times serialize as ISO strings whose wall-clock digits
+ * match the local court time (slice them for display — do not re-interpret).
+ */
+export function getMyBookingsRequest(): Promise<MyBookingsResponse> {
+  return request<MyBookingsResponse>('/api/bookings/mine');
+}
+
+/**
+ * Cancel one of the authenticated customer's own bookings through
+ * dbo.sp_CancelBooking. The request carries only the booking id; the server and
+ * the stored procedure decide ownership/state/deadline. The UI must refresh
+ * history from the DB afterwards — this response is only the success signal.
+ */
+export function cancelBookingRequest(bookingId: string): Promise<CancelBookingResponse> {
+  return request<CancelBookingResponse>(`/api/bookings/${encodeURIComponent(bookingId)}/cancel`, { method: 'POST' });
 }

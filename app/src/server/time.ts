@@ -107,8 +107,13 @@ export function vietnamWallNow(): WallClock {
 }
 
 /** True when `value` is a well-formed UNIQUEIDENTIFIER string. */
-export function isValidCourtId(value: unknown): value is string {
+export function isValidGuid(value: unknown): value is string {
   return typeof value === 'string' && GUID_REGEX.test(value);
+}
+
+/** True when `value` is a well-formed UNIQUEIDENTIFIER string (court context). */
+export function isValidCourtId(value: unknown): value is string {
+  return isValidGuid(value);
 }
 
 export type WindowValidation =

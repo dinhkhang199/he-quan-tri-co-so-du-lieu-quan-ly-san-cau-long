@@ -3,20 +3,30 @@ import sql from 'mssql';
 import type { SessionDb } from '../db/index.js';
 import { mapSqlError } from '../../shared/spError.js';
 import type { MappedError } from '../../shared/spError.js';
-import type { BookingCreateResponse, CostEstimateResponse } from '../../shared/types.js';
-import { isValidCourtId, validateWindow } from '../time.js';
+import type { BookingStatus } from '../../shared/contract.js';
+import type {
+  BookingCreateResponse,
+  CancelBookingResponse,
+  CostEstimateResponse,
+  MyBooking,
+  MyBookingsResponse,
+} from '../../shared/types.js';
+import { isValidCourtId, isValidGuid, validateWindow } from '../time.js';
 
 /**
- * Customer booking API (Phase 2.4) — authenticated CUSTOMER only.
+ * Customer booking API (Phase 2.4 + 2.5) — authenticated CUSTOMER only.
  *
- * POST /api/bookings      { courtId, startTime, endTime }
+ * POST /api/bookings                    { courtId, startTime, endTime }
  * GET  /api/bookings/estimate?courtId=...&startTime=...&endTime=...
+ * GET  /api/bookings/mine
+ * POST /api/bookings/:bookingId/cancel
  *
- * Both routes run on the authenticated SESSION_CONTEXT connection (SessionDb):
- * the request carries ONLY the court + wall-clock window. Authorization,
- * ownership, pricing and booking validity are decided by dbo.sp_BookCourt /
- * dbo.fn_CalculateBookingCost on that connection. The browser is never
- * trusted for UserId/Role/status/cost, and the shared (public) SQL pool is
+ * All routes run on the authenticated SESSION_CONTEXT connection (SessionDb):
+ * the request carries ONLY the court + wall-clock window (+ booking id for
+ * cancellation). Authorization, ownership, pricing and booking validity are
+ * decided by dbo.sp_BookCourt / dbo.fn_CalculateBookingCost /
+ * dbo.sp_GetMyBookings / dbo.sp_CancelBooking on that connection. The browser is
+ * never trusted for UserId/Role/status/cost, and the shared (public) SQL pool is
  * never used here.
  *
  * sp_BookCourt (06_procedures.sql) requires:
@@ -26,6 +36,10 @@ import { isValidCourtId, validateWindow } from '../time.js';
  *   - a valid future 06:00-22:00, 30-min-boundary, 1-3h, same-day window
  *   - no overlapping BOOKED booking on the same court
  * and INSERTs exactly one PENDING row (triggers emit audit + owner notification).
+ *
+ * sp_GetMyBookings returns ONLY the SESSION_CONTEXT actor's own rows.
+ * sp_CancelBooking re-validates ownership/state/3h-deadline under lock; the
+ * request carries no authority/state fields.
  */
 
 /** Mirrors the auth API error shape without leaking credentials/SQL internals. */
@@ -47,6 +61,24 @@ function bookingFailureStatus(mapped: MappedError): number {
   if (mapped.code === 50021) return 409; // overlapping BOOKED booking
   if (mapped.code === 50011) return 403; // only CUSTOMER may book
   if (mapped.code !== null) return 400; // every other known THROW is a bad request
+  return 500;
+}
+
+/** Safe HTTP status for a dbo.sp_CancelBooking failure (exact THROW codes). */
+function cancelFailureStatus(mapped: MappedError): number {
+  if (mapped.code === 1205) return 409; // deadlock victim: safe retry
+  if (mapped.code === 50051) return 404; // booking not found
+  if (mapped.code === 50054 || mapped.code === 50056 || mapped.code === 50057) return 403; // ownership/permission
+  if (mapped.code === 50052 || mapped.code === 50053 || mapped.code === 50055 || mapped.code === 50058) return 409; // state/deadline/race
+  if (mapped.code !== null) return 400;
+  return 500;
+}
+
+/** Safe HTTP status for a dbo.sp_GetMyBookings failure. */
+function historyFailureStatus(mapped: MappedError): number {
+  if (mapped.code === 51054) return 401; // session context empty/mismatched → re-login
+  if (mapped.code === 1205) return 409; // deadlock victim: safe retry
+  if (mapped.code !== null) return 400;
   return 500;
 }
 
@@ -128,6 +160,138 @@ export function createBookingsRouter(sessionDb: SessionDb): Router {
       // error and the UI degrades to "—" without blocking the booking flow.
       const mapped = mapSqlError(err);
       res.status(500).json({ error: { code: mapped.code, message: mapped.message ?? mapped.fallback } });
+    }
+  });
+
+  /**
+   * GET /api/bookings/mine — authenticated CUSTOMER history (Phase 2.5).
+   *
+   * Executes dbo.sp_GetMyBookings on the existing SessionDb connection after
+   * verifying SESSION_CONTEXT. The SP derives the owner strictly from
+   * SESSION_CONTEXT('UserId') (KNOWN-06: no fallback, impersonation rejected);
+   * the @UserId we pass comes from the authenticated Express session and must
+   * equal the SQL actor. No client-supplied identity is accepted.
+   */
+  router.get('/mine', async (req, res) => {
+    const user = req.session.user;
+    if (!user) {
+      res.status(401).json({ error: { code: null, message: 'Chưa đăng nhập.' } });
+      return;
+    }
+    if (user.role !== 'CUSTOMER') {
+      res.status(403).json({ error: { code: null, message: 'Chỉ CUSTOMER mới xem được lịch sử đặt sân.' } });
+      return;
+    }
+
+    const sessionId = req.session.id;
+    const contextOk = await sessionDb.verifySessionContext(sessionId, user.userId, user.role);
+    if (!contextOk) {
+      delete req.session.user;
+      res.status(401).json({ error: { code: null, message: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.' } });
+      return;
+    }
+
+    try {
+      const rows = await sessionDb.withExistingConnection(sessionId, async (conn) => {
+        const r = conn.request().input('UserId', sql.UniqueIdentifier, user.userId);
+        const result = await r.execute('dbo.sp_GetMyBookings');
+        return result.recordset as Array<{
+          BookingId: string;
+          CourtId: string;
+          CourtName: string;
+          CourtAddress: string;
+          StartTime: Date;
+          EndTime: Date;
+          Status: string;
+          TotalCost: number | null;
+          CreatedAt: Date;
+        }>;
+      });
+
+      const bookings: MyBooking[] = rows.map((row) => ({
+        BookingId: row.BookingId,
+        CourtId: row.CourtId,
+        CourtName: row.CourtName,
+        CourtAddress: row.CourtAddress,
+        StartTime: row.StartTime,
+        EndTime: row.EndTime,
+        Status: row.Status as BookingStatus,
+        TotalCost: Number(row.TotalCost ?? 0),
+        CreatedAt: row.CreatedAt,
+      }));
+
+      const body: MyBookingsResponse = { bookings, count: bookings.length };
+      res.json(body);
+    } catch (err) {
+      if (err instanceof Error && err.message === 'No active SQL session connection') {
+        delete req.session.user;
+        res.status(401).json({ error: { code: null, message: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.' } });
+        return;
+      }
+      const mapped = mapSqlError(err);
+      res.status(historyFailureStatus(mapped)).json(serializeError(mapped));
+    }
+  });
+
+  /**
+   * POST /api/bookings/:bookingId/cancel — authenticated CUSTOMER cancellation
+   * (Phase 2.5).
+   *
+   * The body/URL carries ONLY the booking id. dbo.sp_CancelBooking re-validates
+   * under lock: actor (SESSION_CONTEXT), ownership, state and the 3-hour
+   * BOOKED deadline (50050..50058). On success the booking becomes CANCELLED and
+   * the UI refreshes history from the DB instead of patching local state.
+   */
+  router.post('/:bookingId/cancel', async (req, res) => {
+    const user = req.session.user;
+    if (!user) {
+      res.status(401).json({ error: { code: null, message: 'Chưa đăng nhập.' } });
+      return;
+    }
+    if (user.role !== 'CUSTOMER') {
+      res.status(403).json({ error: { code: null, message: 'Chỉ CUSTOMER mới được hủy booking.' } });
+      return;
+    }
+
+    const sessionId = req.session.id;
+    const contextOk = await sessionDb.verifySessionContext(sessionId, user.userId, user.role);
+    if (!contextOk) {
+      delete req.session.user;
+      res.status(401).json({ error: { code: null, message: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.' } });
+      return;
+    }
+
+    const rawBookingId = req.params.bookingId;
+    if (!isValidGuid(rawBookingId)) {
+      res.status(400).json({ error: { code: null, message: 'Mã booking không hợp lệ.' } });
+      return;
+    }
+
+    try {
+      await sessionDb.withExistingConnection(sessionId, async (conn) => {
+        const r = conn
+          .request()
+          .input('SessionUserId', sql.UniqueIdentifier, user.userId)
+          .input('BookingId', sql.UniqueIdentifier, rawBookingId);
+        await r.execute('dbo.sp_CancelBooking');
+      });
+
+      const body: CancelBookingResponse = { bookingId: rawBookingId, status: 'CANCELLED' };
+      res.json(body);
+    } catch (err) {
+      if (err instanceof Error && err.message === 'No active SQL session connection') {
+        delete req.session.user;
+        res.status(401).json({ error: { code: null, message: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.' } });
+        return;
+      }
+      const mapped = mapSqlError(err);
+      if (mapped.code === 50050) {
+        // Actor/user/context problem reported by the SP → re-login required.
+        delete req.session.user;
+        res.status(401).json({ error: { code: null, message: mapped.message ?? 'Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.' } });
+        return;
+      }
+      res.status(cancelFailureStatus(mapped)).json(serializeError(mapped));
     }
   });
 

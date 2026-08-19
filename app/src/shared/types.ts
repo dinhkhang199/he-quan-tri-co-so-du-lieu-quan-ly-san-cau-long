@@ -142,3 +142,25 @@ export interface CostEstimateResponse {
 export interface CreateCourtOutput {
   CourtId: string;
 }
+
+/**
+ * GET /api/bookings/mine response (authenticated CUSTOMER history).
+ * Rows come verbatim from dbo.sp_GetMyBookings; only the actor's own bookings
+ * are returned. StartTime/EndTime/CreatedAt serialize as ISO strings whose wall
+ * clock digits match the local court time (the SQL DATETIME2 is stored as the
+ * local wall clock; string-slice it for display — do not re-interpret via Date).
+ */
+export interface MyBookingsResponse {
+  bookings: MyBooking[];
+  count: number;
+}
+
+/**
+ * POST /api/bookings/:bookingId/cancel success response. The cancel ran through
+ * dbo.sp_CancelBooking; the UX then refreshes history from dbo.sp_GetMyBookings
+ * so the UI never fabricates the resulting state.
+ */
+export interface CancelBookingResponse {
+  bookingId: string;
+  status: 'CANCELLED';
+}
