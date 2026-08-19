@@ -214,3 +214,68 @@ export interface ManagerMutationResponse {
 
 /** Manager booking mutations backed by the four contract Stored Procedures. */
 export type ManagerBookingAction = 'approve' | 'reject' | 'cancel' | 'complete';
+
+/**
+ * dbo.Courts row as returned by the authenticated manager court-list endpoint
+ * (01_tables_constraints.sql). Exact table columns; COURT_MANAGER rows are
+ * scoped to OwnerId = SESSION_CONTEXT('UserId') BEFORE they leave SQL Server.
+ * CreatedAt/UpdatedAt serialize as ISO strings carrying the local wall-clock
+ * digits — string-slice for display, do not re-interpret.
+ */
+export interface ManagerCourt {
+  CourtId: string;
+  CourtName: string;
+  Address: string;
+  SurfaceType: string;
+  SizeType: string;
+  PricePerHour: number;
+  PricePerThreeHours: number;
+  ImageUrl: string | null;
+  OwnerId: string;
+  IsActive: boolean;
+  CreatedAt: Date;
+  UpdatedAt: Date;
+}
+
+/**
+ * GET /api/manager/courts response. Rows come verbatim from dbo.Courts on the
+ * authenticated session connection, scoped IN SQL by SESSION_CONTEXT
+ * (MANAGER sees all including inactive; COURT_MANAGER sees only OwnerId rows).
+ */
+export interface ManagerCourtsResponse {
+  courts: ManagerCourt[];
+  count: number;
+}
+
+/**
+ * Editable court fields accepted from the browser for create/update. OwnerId is
+ * deliberately NOT here — the Stored Procedures derive ownership from the
+ * authenticated session (sp_CreateCourt defaults @OwnerId to the session user;
+ * COURT_MANAGER is forced to self). Prices are in VND (DB CHECK: > 0).
+ */
+export interface ManagerCourtInput {
+  courtName: string;
+  address: string;
+  surfaceType: string;
+  sizeType: string;
+  pricePerHour: number;
+  pricePerThreeHours: number;
+  imageUrl: string | null;
+}
+
+/**
+ * POST /api/manager/courts success response (sp_CreateCourt output param).
+ * The UX then refetches GET /api/manager/courts from the DB.
+ */
+export interface ManagerCourtCreateResponse {
+  courtId: string;
+}
+
+/**
+ * PUT/DELETE-style court mutation success responses (sp_UpdateCourt /
+ * sp_DeactivateCourt). The UX then refetches GET /api/manager/courts — these
+ * are only success signals.
+ */
+export interface ManagerCourtMutationResponse {
+  courtId: string;
+}

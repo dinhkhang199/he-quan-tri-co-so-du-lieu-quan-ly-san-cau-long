@@ -6,6 +6,10 @@ import type {
   CourtSearchResponse,
   ManagerBookingAction,
   ManagerBookingsResponse,
+  ManagerCourtCreateResponse,
+  ManagerCourtInput,
+  ManagerCourtMutationResponse,
+  ManagerCourtsResponse,
   ManagerMutationResponse,
   MyBookingsResponse,
 } from '../../shared/types';
@@ -157,4 +161,51 @@ export function managerActionRequest(
   return request<ManagerMutationResponse>(`/api/manager/bookings/${encodeURIComponent(bookingId)}/${action}`, {
     method: 'POST',
   });
+}
+
+/**
+ * Authenticated MANAGER/COURT_MANAGER court list (Phase 2.7). Rows come from
+ * dbo.Courts on the authenticated SQL session; scope is applied IN SQL by
+ * SESSION_CONTEXT (MANAGER sees all courts including inactive, COURT_MANAGER
+ * only OwnerId rows), so the browser never sees another actor's courts.
+ */
+export function getManagerCourtsRequest(): Promise<ManagerCourtsResponse> {
+  return request<ManagerCourtsResponse>('/api/manager/courts');
+}
+
+/**
+ * Create a court through dbo.sp_CreateCourt. The request carries ONLY editable
+ * court fields — ownership derives from the authenticated SQL session inside
+ * the Stored Procedure. The UI must refetch the court list from the DB
+ * afterwards; this response is only the success signal.
+ */
+export function createCourtRequest(input: ManagerCourtInput): Promise<ManagerCourtCreateResponse> {
+  return request<ManagerCourtCreateResponse>('/api/manager/courts', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+/**
+ * Update a court through dbo.sp_UpdateCourt. The Stored Procedure re-validates
+ * role, SESSION_CONTEXT and (for COURT_MANAGER) ownership under lock. The UI
+ * must refetch the court list from the DB afterwards.
+ */
+export function updateCourtRequest(courtId: string, input: ManagerCourtInput): Promise<ManagerCourtMutationResponse> {
+  return request<ManagerCourtMutationResponse>(`/api/manager/courts/${encodeURIComponent(courtId)}`, {
+    method: 'PUT',
+    body: JSON.stringify(input),
+  });
+}
+
+/**
+ * Soft-deactivate a court through dbo.sp_DeactivateCourt (IsActive = 0). There
+ * is no reactivation in this phase. The UI must refetch the court list from the
+ * DB afterwards — the deactivated court returns with IsActive = false.
+ */
+export function deactivateCourtRequest(courtId: string): Promise<ManagerCourtMutationResponse> {
+  return request<ManagerCourtMutationResponse>(
+    `/api/manager/courts/${encodeURIComponent(courtId)}/deactivate`,
+    { method: 'POST' },
+  );
 }

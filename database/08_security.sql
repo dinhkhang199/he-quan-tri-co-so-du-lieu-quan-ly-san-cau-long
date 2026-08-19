@@ -60,19 +60,26 @@ GO
 ALTER ROLE bcm_app_role ADD MEMBER bcm_app;
 GO
 
--- ---- App chỉ được EXECUTE SP/Function + SELECT 2 Views công khai/khác ----
+-- ---- App chỉ được EXECUTE SP/Function + SELECT đúng các nguồn được cấp ----
 -- KNOWN-05 FIX: Loại bỏ GRANT SELECT trực tiếp trên Users (chứa PasswordHash nhạy cảm).
--- App chỉ truy cập dữ liệu thông qua SP (WITH EXECUTE AS OWNER) hoặc các View được
--- cấp rõ ràng ở dưới. Views đã lọc dữ liệu nhạy cảm (PasswordHash không xuất hiện
--- ở bất kỳ view nào); các bảng lõi không được cấp SELECT trực tiếp.
+-- App truy cập dữ liệu thông qua SP (WITH EXECUTE AS OWNER) hoặc các nguồn SELECT
+-- được cấp rõ ràng ở dưới (filtered views + bảng Courts chỉ-đọc cho quản lý sân).
 GRANT EXECUTE ON SCHEMA::dbo TO bcm_app_role;
--- vw_AvailableCourts: public availability (guest search).
+-- vw_AvailableCourts: public/guest active-court availability path.
 GRANT SELECT ON OBJECT::dbo.vw_AvailableCourts TO bcm_app_role;
--- vw_AllBookings: administrative booking list for the authenticated manager
--- booking path. Row-level scope (MANAGER all / COURT_MANAGER owned courts) is
--- applied by the application SQL using SESSION_CONTEXT on the authenticated
--- connection — never filtered client-side.
+-- vw_AllBookings: authenticated manager booking-list path. Row-level scope
+-- (MANAGER all / COURT_MANAGER owned courts) is applied by the application SQL
+-- using SESSION_CONTEXT on the authenticated connection — never client-side.
 GRANT SELECT ON OBJECT::dbo.vw_AllBookings TO bcm_app_role;
+-- dbo.Courts: authenticated court-management READ path (Phase 2.7). The
+-- management screen must list BOTH active and inactive courts for the locked
+-- Tất cả / Đang hoạt động / Ngừng hoạt động filters, which vw_AvailableCourts
+-- (IsActive = 1) cannot provide, so a narrow base-table SELECT is approved.
+-- COURT_MANAGER scope (OwnerId = SESSION_CONTEXT('UserId')) is applied by the
+-- application SQL on the authenticated connection. This is READ ONLY:
+-- mutations still go exclusively through sp_CreateCourt / sp_UpdateCourt /
+-- sp_DeactivateCourt (INSERT/UPDATE/DELETE on Courts stays DENYed below).
+GRANT SELECT ON OBJECT::dbo.Courts TO bcm_app_role;
 -- vw_BookingHistory, vw_AdminDashboard chứa dữ liệu toàn bộ booking → app chỉ
 -- truy cập qua SP (sp_GetMyBookings, sp_GetDashboard...) với EXECUTE AS OWNER.
 -- Ngoài ra: Column-level DENY bên dưới chặn PasswordHash kể cả khi có SELECT bảng;
@@ -84,8 +91,11 @@ DENY SELECT ON dbo.Users(PasswordHash) TO bcm_app_role;
 -- ActivityLogs chứa audit nhạy cảm → không cho phép SELECT trực tiếp
 DENY SELECT ON OBJECT::dbo.ActivityLogs TO bcm_app_role;
 
--- Courts: SELECT cho phép để app đọc thông tin sân công khai (view vw_AvailableCourts cũng đã đủ)
--- Các bảng còn lại (Users, Bookings, Notifications) chỉ truy cập qua SP với WITH EXECUTE AS OWNER
+-- Không cấp SELECT thêm cho các bảng lõi còn lại: Users (chứa PasswordHash và
+-- dữ liệu cá nhân), Bookings, Notifications — chúng chỉ truy cập qua SP với
+-- WITH EXECUTE AS OWNER. dbo.Courts được cấp SELECT chỉ-đọc (riêng cho quản lý
+-- sân); không cấp INSERT/UPDATE/DELETE ở bất kỳ bảng lõi nào (mọi thay đổi đi
+-- qua Stored Procedure với WITH EXECUTE AS OWNER).
 GO
 
 -- ---- Cấm app INSERT/UPDATE/DELETE trực tiếp lên bảng lõi ----
