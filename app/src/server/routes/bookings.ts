@@ -42,12 +42,14 @@ import { isValidCourtId, isValidGuid, validateWindow } from '../time.js';
  * request carries no authority/state fields.
  */
 
-/** Mirrors the auth API error shape without leaking credentials/SQL internals. */
+/** Serialize a failure for the HTTP client: code + safe Vietnamese message ONLY.
+ * Raw SQL/driver detail is logged server-side and never serialized to the
+ * response, in every environment (including dev). */
 function serializeError(mapped: MappedError) {
+  console.error(`[bookings] request failed (code=${mapped.code ?? 'none'}): ${mapped.technical}`);
   return {
     code: mapped.code,
     message: mapped.message ?? mapped.fallback,
-    technical: process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'production' ? undefined : mapped.technical,
   };
 }
 

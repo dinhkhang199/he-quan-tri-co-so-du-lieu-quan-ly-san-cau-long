@@ -27,9 +27,9 @@ trong cùng một lần chạy.
 
 ```
 # Session A (chạy trước — tạo bảng cờ + chạy phase UNSAFE và FIXED)
-sqlcmd -S .\SQLEXPRESS -E -i tests\concurrency\lost_update_session_A.sql -o ..\evidence\lostupdate_A.txt
+sqlcmd -S .\SQLEXPRESS -E -f 65001 -i tests\concurrency\lost_update_session_A.sql -o ..\evidence\lostupdate_A.txt
 # Session B (khởi động ~3s sau A — chờ cờ của A rồi hành động theo từng phase)
-Start-Sleep 3; sqlcmd -S .\SQLEXPRESS -E -i tests\concurrency\lost_update_session_B.sql -o ..\evidence\lostupdate_B.txt
+Start-Sleep 3; sqlcmd -S .\SQLEXPRESS -E -f 65001 -i tests\concurrency\lost_update_session_B.sql -o ..\evidence\lostupdate_B.txt
 ```
 
 Thay `lost_update` → `dirty_read` / `nonrepeatable` / `phantom` / `toctou_booking_vs_deactivate`

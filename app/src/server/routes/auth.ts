@@ -39,12 +39,14 @@ function authFailureStatus(mapped: MappedError): number {
   return mapped.code === null ? 500 : 400;
 }
 
-/** Mirrors the global errorHandler response shape without ever leaking credentials. */
+/** Serialize a failure for the HTTP client: code + safe Vietnamese message ONLY.
+ * Raw SQL/driver detail is logged server-side and never serialized to the
+ * response, in every environment (including dev). */
 function serializeError(mapped: MappedError) {
+  console.error(`[auth] request failed (code=${mapped.code ?? 'none'}): ${mapped.technical}`);
   return {
     code: mapped.code,
     message: mapped.message ?? mapped.fallback,
-    technical: process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'production' ? undefined : mapped.technical,
   };
 }
 
