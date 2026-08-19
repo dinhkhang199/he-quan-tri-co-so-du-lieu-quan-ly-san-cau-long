@@ -3,6 +3,7 @@ import type { AppConfig } from './config.js';
 import { createHealthRouter } from './routes/health.js';
 import { createAuthRouter } from './routes/auth.js';
 import { createCourtsRouter } from './routes/courts.js';
+import { createBookingsRouter } from './routes/bookings.js';
 import { createSessionMiddleware } from './middleware/session.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import type { SessionDb } from './db/index.js';
@@ -17,6 +18,7 @@ export function createApp(cfg: AppConfig, sessionDb: SessionDb): express.Express
   app.use('/api', createHealthRouter(cfg, () => sessionDb.activeCount()));
   app.use('/api/auth', createAuthRouter(sessionDb));
   app.use('/api/courts', createCourtsRouter(cfg));
+  app.use('/api/bookings', createBookingsRouter(sessionDb));
 
   app.use('/api', (_req, res) => {
     res.status(404).json({ error: { message: 'Không tìm thấy API endpoint này.' } });

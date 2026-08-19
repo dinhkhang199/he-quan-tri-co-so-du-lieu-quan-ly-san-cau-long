@@ -105,6 +105,39 @@ export interface BookCourtOutput {
   TotalCost: number;
 }
 
+/**
+ * Booking echoed back to the client after a successful creation.
+ * Times are local wall-clock strings ("YYYY-MM-DDTHH:MM:SS", no timezone),
+ * the exact values sent to dbo.sp_BookCourt as DATETIME2(0). TotalCost is the
+ * value computed by SQL (fn_CalculateBookingCost inside the procedure).
+ */
+export interface BookingResult {
+  BookingId: string;
+  CourtId: string;
+  StartTime: string;
+  EndTime: string;
+  Status: BookingStatus;
+  TotalCost: number;
+}
+
+/** POST /api/bookings response. */
+export interface BookingCreateResponse {
+  booking: BookingResult;
+}
+
+/**
+ * GET /api/bookings/estimate response (pre-confirm "Chi phí dự kiến",
+ * authenticated CUSTOMER flow). The cost is computed by the DB
+ * (dbo.fn_CalculateBookingCost); the app holds no cost formula. `totalCost` is
+ * null when the court does not exist.
+ */
+export interface CostEstimateResponse {
+  totalCost: number | null;
+  courtId: string;
+  startTime: string;
+  endTime: string;
+}
+
 /** sp_CreateCourt output parameter. */
 export interface CreateCourtOutput {
   CourtId: string;

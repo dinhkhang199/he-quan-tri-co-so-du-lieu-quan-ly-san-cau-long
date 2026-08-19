@@ -1,4 +1,4 @@
-import type { AuthUser, CourtSearchResponse } from '../../shared/types';
+import type { AuthUser, BookingCreateResponse, CostEstimateResponse, CourtSearchResponse } from '../../shared/types';
 
 /** Server never authenticates on the module itself; it checks the web session cookie. */
 const DEFAULT_HEADERS: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -69,4 +69,36 @@ export function searchCourtsRequest(params: {
   const qs = new URLSearchParams({ startTime: params.startTime, endTime: params.endTime });
   if (params.courtId) qs.set('courtId', params.courtId);
   return request<CourtSearchResponse>(`/api/courts/available?${qs.toString()}`);
+}
+
+/**
+ * Create a CUSTOMER booking by calling dbo.sp_BookCourt on the authenticated
+ * SQL session connection. The server decides authorization; the request carries
+ * only { courtId, startTime, endTime }. Times are local wall-clock strings
+ * ("YYYY-MM-DDTHH:MM:00", no timezone).
+ */
+export function bookCourtRequest(params: {
+  courtId: string;
+  startTime: string;
+  endTime: string;
+}): Promise<BookingCreateResponse> {
+  return request<BookingCreateResponse>('/api/bookings', {
+    method: 'POST',
+    body: JSON.stringify(params),
+  });
+}
+
+/**
+ * Pre-confirm "Chi phí dự kiến" for the booking detail screen. Authenticated
+ * CUSTOMER flow: the cost is computed by dbo.fn_CalculateBookingCost on the
+ * authenticated SQL session connection — no cost formula lives in the frontend.
+ * `totalCost` is null when the court does not exist.
+ */
+export function costEstimateRequest(params: {
+  courtId: string;
+  startTime: string;
+  endTime: string;
+}): Promise<CostEstimateResponse> {
+  const qs = new URLSearchParams({ courtId: params.courtId, startTime: params.startTime, endTime: params.endTime });
+  return request<CostEstimateResponse>(`/api/bookings/estimate?${qs.toString()}`);
 }
