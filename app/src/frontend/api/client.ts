@@ -11,7 +11,9 @@ import type {
   ManagerCourtMutationResponse,
   ManagerCourtsResponse,
   ManagerMutationResponse,
+  MarkNotificationReadResponse,
   MyBookingsResponse,
+  NotificationsResponse,
 } from '../../shared/types';
 
 /** Server never authenticates on the module itself; it checks the web session cookie. */
@@ -206,6 +208,31 @@ export function updateCourtRequest(courtId: string, input: ManagerCourtInput): P
 export function deactivateCourtRequest(courtId: string): Promise<ManagerCourtMutationResponse> {
   return request<ManagerCourtMutationResponse>(
     `/api/manager/courts/${encodeURIComponent(courtId)}/deactivate`,
+    { method: 'POST' },
+  );
+}
+
+/**
+ * Authenticated notification list (CUSTOMER / MANAGER / COURT_MANAGER). Rows
+ * come from dbo.sp_GetNotifications on the authenticated SQL session; the SP
+ * derives the actor from SESSION_CONTEXT, so the browser only ever receives
+ * the authenticated user's own notifications. CreatedAt carries local
+ * wall-clock digits — display by string-slicing, do not re-interpret via Date.
+ */
+export function getNotificationsRequest(): Promise<NotificationsResponse> {
+  return request<NotificationsResponse>('/api/notifications');
+}
+
+/**
+ * Mark one notification read through dbo.sp_MarkNotificationRead. The request
+ * carries ONLY the notification id; ownership is enforced by the Stored
+ * Procedure against SESSION_CONTEXT (a foreign/unknown id matches nothing and
+ * is rejected). The UI must refetch GET /api/notifications afterwards — this
+ * response is only the success signal.
+ */
+export function markNotificationReadRequest(notificationId: string): Promise<MarkNotificationReadResponse> {
+  return request<MarkNotificationReadResponse>(
+    `/api/notifications/${encodeURIComponent(notificationId)}/read`,
     { method: 'POST' },
   );
 }

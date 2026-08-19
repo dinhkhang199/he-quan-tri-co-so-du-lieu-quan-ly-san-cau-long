@@ -7,6 +7,7 @@ import './styles/booking.css';
 import './styles/history.css';
 import './styles/manager-bookings.css';
 import './styles/manager-courts.css';
+import './styles/notifications.css';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';

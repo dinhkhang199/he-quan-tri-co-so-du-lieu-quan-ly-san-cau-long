@@ -78,6 +78,28 @@ export interface Notification {
   CreatedAt: Date;
 }
 
+/**
+ * GET /api/notifications response (authenticated CUSTOMER / MANAGER /
+ * COURT_MANAGER). Rows come verbatim from dbo.sp_GetNotifications on the
+ * authenticated session; the actor is derived from SESSION_CONTEXT by the SP,
+ * never from the browser. CreatedAt serializes as an ISO string carrying the
+ * local wall-clock digits — string-slice for display, do not re-interpret.
+ */
+export interface NotificationsResponse {
+  notifications: Notification[];
+  count: number;
+}
+
+/**
+ * POST /api/notifications/:notificationId/read success response. The read ran
+ * through dbo.sp_MarkNotificationRead, which enforces ownership by UPDATEing
+ * only rows WHERE UserId = SESSION_CONTEXT actor. The UX then refetches
+ * GET /api/notifications — this is only the success signal.
+ */
+export interface MarkNotificationReadResponse {
+  notificationId: string;
+}
+
 /** sp_GetDashboard first result-set (overview). */
 export interface DashboardOverview {
   PendingCount: number;
