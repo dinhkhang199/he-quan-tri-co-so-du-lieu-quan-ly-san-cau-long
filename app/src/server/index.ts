@@ -10,7 +10,7 @@ async function main(): Promise<void> {
   const app = createApp(cfg, sessionDb);
 
   const server = app.listen(cfg.port, () => {
-    console.log(`[badmintonpro] app listening on http://localhost:${cfg.port} (phase 2.0 bootstrap)`);
+    console.log(`[badmintonpro] app listening on http://localhost:${cfg.port}`);
   });
 
   const shutdown = async () => {

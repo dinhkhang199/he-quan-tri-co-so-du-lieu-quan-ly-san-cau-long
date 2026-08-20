@@ -1,7 +1,7 @@
 # Phase 2.0 — Architecture Decision Record
 
-Branch: `phase1-db-hardening` (Phase 2.0 is not committed).
-Scope: application bootstrap only. No business feature is implemented.
+Branch: `phase2-app`. Phase 2.0–2.12 complete.
+Scope: full application implementing all locked screens against the Phase 1 database contract.
 
 ## A. Audit summary
 
@@ -31,7 +31,7 @@ Scope: application bootstrap only. No business feature is implemented.
 
 | Concern | Choice | Why |
 |---|---|---|
-| Frontend | **React 19 + TypeScript + Vite** | Component reuse across the 9 locked screens; single-language type discipline shared with the server; Vite dev server is trivial to run for the course demo. |
+| Frontend | **React 18 + TypeScript + Vite** | Component reuse across the 8 locked screens; single-language type discipline shared with the server; Vite dev server is trivial to run for the course demo. |
 | Backend | **Express 4 (TypeScript, run via `tsx`)** | Minimal, auditable routing; each Stored Procedure maps to a thin route handler. |
 | SQL Server driver | **`mssql` (tedious)** | Mature driver; native connection pooling; first-class `mssql.Connection` for a lifetime-held connection (needed for SESSION_CONTEXT). |
 | Routing | Express routes (`/api/...`) + React Router shells | Matches locked UI; server stays the only DB caller. |
@@ -101,7 +101,7 @@ when it is empty or when a caller-supplied `@UserId` does not match the context.
 - No generic ADMIN app role.
 - `database/`, `tests/`, `evidence/` are untouched. No new DB objects invented.
 
-## G. Bootstrap layout (created in this phase)
+## G. Application layout
 ```
 app/
   ARCHITECTURE.md
@@ -112,15 +112,26 @@ app/
   .env.example
   .gitignore
   src/
-    shared/   contract.ts (roles/states/codes) + types.ts (DTOs) + spError.ts (error map)
-    server/   index.ts, app.ts, config.ts
-               db/ pool.ts, sessionDb.ts
+    shared/   contract.ts + types.ts + spError.ts
+    server/   index.ts, app.ts, config.ts, time.ts
+               db/ connection.ts, index.ts, pool.ts, sessionDb.ts
                middleware/ errorHandler.ts, session.ts
-               routes/ health.ts
+               routes/ auth.ts, bookings.ts, courts.ts, health.ts,
+                        manager.ts, managerCourts.ts, managerDashboard.ts, notifications.ts
+               dev/ sessionContextProbe.ts
     frontend/ main.tsx, App.tsx, vite-env.d.ts
-               components/ HealthCard.tsx
-               pages/ HomePage.tsx
-               styles/ tokens.css (from DESIGN.md)
+               api/ client.ts
+               auth/ AuthContext.tsx, guards.tsx
+               components/ BrandLogo.tsx, BpIcon.tsx, Button.tsx, Card.tsx,
+                           CourtCard.tsx, EmptyState.tsx, IconButton.tsx, Input.tsx,
+                           LoadingSkeleton.tsx, NotificationList.tsx, NotificationsView.tsx,
+                           PageHeader.tsx, RoutePlaceholder.tsx, StatusBadge.tsx
+               pages/ LoginPage.tsx, CourtsPage.tsx, BookingDetailPage.tsx,
+                       MyBookingsPage.tsx, NotificationsPage.tsx
+                       manager/ ManagerBookingsPage.tsx, ManagerCourtsPage.tsx,
+                                ManagerDashboardPage.tsx, ManagerNotificationsPage.tsx
+               shells/ ContentShell.tsx, CustomerShell.tsx, GuestShell.tsx, ManagerShell.tsx
+               styles/ tokens.css, base.css, components.css, shells.css, ...
 ```
 
-Phase 2.0 is stop-after-bootstrap. Authentication and business screens begin in 2.1+.
+Phase 2.0 was the bootstrap skeleton. Phases 2.1–2.12 built the full application on this foundation.

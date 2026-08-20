@@ -24,7 +24,7 @@ export function createHealthRouter(cfg: AppConfig, activeSessions: () => number)
     res.json({
       status: 'ok',
       service: 'badmintoncourtmanagement-app',
-      phase: '2.0-bootstrap',
+      phase: '2.12',
       db,
       activeSessionConnections: activeSessions(),
       time: new Date().toISOString(),

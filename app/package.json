@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Phase 2 application for BadmintonCourtManagement (architecture bootstrap only)",
+  "description": "BadmintonCourtManagement Phase 2 application (TypeScript + Express + React + SQL Server)",
   "engines": {
     "node": ">=20"
   },
