@@ -67,6 +67,22 @@ export function formatWallClock(t: WallClock): string {
   return `${pad2(t.year)}-${pad2(t.month)}-${pad2(t.day)} ${pad2(t.hour)}:${pad2(t.minute)}:${pad2(t.second)}`;
 }
 
+/**
+ * Construct a JS Date whose UTC components match the wall-clock digits.
+ *
+ * node-mssql / tedious converts string parameter values to a JS Date via
+ * Date.parse() (which interprets the string as LOCAL time), then serializes
+ * the Date to TDS using getUTC*() accessors (useUTC defaults to true).
+ * On a UTC+7 server this silently shifts 18:00 → 11:00.
+ *
+ * By building the Date with Date.UTC(), the UTC getters extract the same
+ * digits as the original wall clock, regardless of the server's timezone.
+ * This is the safe binding value for sql.DateTime2 parameters.
+ */
+export function toSqlDate(t: WallClock): Date {
+  return new Date(Date.UTC(t.year, t.month - 1, t.day, t.hour, t.minute, t.second));
+}
+
 /** Minutes of the day (0..1439). Only meaningful for intra-day math. */
 export function minutesOfDay(t: WallClock): number {
   return t.hour * 60 + t.minute;

@@ -68,7 +68,9 @@ function managerMutationStatus(mapped: MappedError): number {
     mapped.code === 50055 || // (defensive) customer 3h rule
     mapped.code === 50058 || // cancel race
     mapped.code === 50062 || // only BOOKED may complete
-    mapped.code === 50064 // complete race
+    mapped.code === 50064 || // complete race
+    mapped.code === 51000 || // invalid state transition (trigger)
+    mapped.code === 51001 // overlap with existing BOOKED (trigger)
   )
     return 409; // state/deadline/overlap conflict
   if (mapped.code === 50031 || mapped.code === 50057) return 403; // insufficient role
@@ -166,7 +168,7 @@ export function createManagerRouter(sessionDb: SessionDb): Router {
         return;
       }
       const mapped = mapSqlError(err);
-      res.status(managerListStatus(mapped)).json(serializeError(mapped));
+      res.status(managerListStatus(mapped)).json({ error: serializeError(mapped) });
     }
   });
 
@@ -233,7 +235,7 @@ export function createManagerRouter(sessionDb: SessionDb): Router {
           res.status(401).json({ error: { code: null, message: mapped.message ?? 'Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.' } });
           return;
         }
-        res.status(managerMutationStatus(mapped)).json(serializeError(mapped));
+        res.status(managerMutationStatus(mapped)).json({ error: serializeError(mapped) });
       }
     };
   }

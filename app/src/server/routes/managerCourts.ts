@@ -225,7 +225,7 @@ export function createManagerCourtsRouter(sessionDb: SessionDb): Router {
         return;
       }
       const mapped = mapSqlError(err);
-      res.status(courtListStatus(mapped)).json(serializeError(mapped));
+      res.status(courtListStatus(mapped)).json({ error: serializeError(mapped) });
     }
   });
 
@@ -298,7 +298,7 @@ export function createManagerCourtsRouter(sessionDb: SessionDb): Router {
         res.status(401).json({ error: { code: null, message: mapped.message ?? 'Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.' } });
         return;
       }
-      res.status(courtMutationStatus(mapped)).json(serializeError(mapped));
+      res.status(courtMutationStatus(mapped)).json({ error: serializeError(mapped) });
     }
   });
 
@@ -368,7 +368,7 @@ export function createManagerCourtsRouter(sessionDb: SessionDb): Router {
         res.status(401).json({ error: { code: null, message: mapped.message ?? 'Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.' } });
         return;
       }
-      res.status(courtMutationStatus(mapped)).json(serializeError(mapped));
+      res.status(courtMutationStatus(mapped)).json({ error: serializeError(mapped) });
     }
   });
 
@@ -425,7 +425,7 @@ export function createManagerCourtsRouter(sessionDb: SessionDb): Router {
         res.status(401).json({ error: { code: null, message: mapped.message ?? 'Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.' } });
         return;
       }
-      res.status(courtMutationStatus(mapped)).json(serializeError(mapped));
+      res.status(courtMutationStatus(mapped)).json({ error: serializeError(mapped) });
     }
   });
 

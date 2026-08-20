@@ -11,7 +11,7 @@ import type {
   MyBooking,
   MyBookingsResponse,
 } from '../../shared/types.js';
-import { isValidCourtId, isValidGuid, validateWindow } from '../time.js';
+import { isValidCourtId, isValidGuid, toSqlDate, validateWindow } from '../time.js';
 
 /**
  * Customer booking API (Phase 2.4 + 2.5) — authenticated CUSTOMER only.
@@ -135,8 +135,8 @@ export function createBookingsRouter(sessionDb: SessionDb): Router {
         const r = conn
           .request()
           .input('CourtId', sql.UniqueIdentifier, courtId)
-          .input('StartTime', sql.DateTime2(0), window.startSql)
-          .input('EndTime', sql.DateTime2(0), window.endSql);
+          .input('StartTime', sql.DateTime2(0), toSqlDate(window.start))
+          .input('EndTime', sql.DateTime2(0), toSqlDate(window.end));
         const result = await r.query<{ TotalCost: number | null }>(
           'SELECT CONVERT(decimal(12,0), dbo.fn_CalculateBookingCost(@CourtId, @StartTime, @EndTime)) AS TotalCost;',
         );
@@ -231,7 +231,7 @@ export function createBookingsRouter(sessionDb: SessionDb): Router {
         return;
       }
       const mapped = mapSqlError(err);
-      res.status(historyFailureStatus(mapped)).json(serializeError(mapped));
+      res.status(historyFailureStatus(mapped)).json({ error: serializeError(mapped) });
     }
   });
 
@@ -293,7 +293,7 @@ export function createBookingsRouter(sessionDb: SessionDb): Router {
         res.status(401).json({ error: { code: null, message: mapped.message ?? 'Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.' } });
         return;
       }
-      res.status(cancelFailureStatus(mapped)).json(serializeError(mapped));
+      res.status(cancelFailureStatus(mapped)).json({ error: serializeError(mapped) });
     }
   });
 
@@ -340,8 +340,8 @@ export function createBookingsRouter(sessionDb: SessionDb): Router {
           .request()
           .input('UserId', sql.UniqueIdentifier, user.userId)
           .input('CourtId', sql.UniqueIdentifier, courtId)
-          .input('StartTime', sql.DateTime2(0), window.startSql)
-          .input('EndTime', sql.DateTime2(0), window.endSql)
+          .input('StartTime', sql.DateTime2(0), toSqlDate(window.start))
+          .input('EndTime', sql.DateTime2(0), toSqlDate(window.end))
           .output('BookingId', sql.UniqueIdentifier)
           .output('TotalCost', sql.Decimal(12, 0));
         const result = await r.execute('dbo.sp_BookCourt');
@@ -375,7 +375,7 @@ export function createBookingsRouter(sessionDb: SessionDb): Router {
         return;
       }
       const mapped = mapSqlError(err);
-      res.status(bookingFailureStatus(mapped)).json(serializeError(mapped));
+      res.status(bookingFailureStatus(mapped)).json({ error: serializeError(mapped) });
     }
   });
 

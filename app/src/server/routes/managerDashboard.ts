@@ -132,7 +132,7 @@ export function createManagerDashboardRouter(sessionDb: SessionDb): Router {
         res.status(401).json({ error: { code: null, message: mapped.message ?? 'Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.' } });
         return;
       }
-      res.status(dashboardStatus(mapped)).json(serializeError(mapped));
+      res.status(dashboardStatus(mapped)).json({ error: serializeError(mapped) });
     }
   });
 

@@ -68,6 +68,8 @@ const SQL_ERROR_MAP: Record<number, string> = {
   50092: 'Court Manager chỉ thao tác sân thuộc quyền mình.',
   50100: 'Không tìm thấy notification của người dùng này.',
   50110: 'Phiên đăng nhập chưa được thiết lập; chỉ MANAGER/COURT_MANAGER được xem dashboard.',
+  51000: 'Chuyển trạng thái booking không hợp lệ.',
+  51001: 'Sân đã có booking được xác nhận (BOOKED) trong khung giờ này.',
   51054: 'Chưa đăng nhập: phải gọi sp_Login trước (SESSION_CONTEXT rỗng) hoặc UserId không khớp.',
   51060: 'Chưa đăng nhập: phải gọi sp_Login trước (SESSION_CONTEXT rỗng) hoặc UserId không khớp.',
   51061: 'Phiên đăng nhập chưa được thiết lập hoặc UserId không khớp.',

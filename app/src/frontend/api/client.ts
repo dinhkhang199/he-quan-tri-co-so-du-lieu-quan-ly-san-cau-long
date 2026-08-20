@@ -22,6 +22,8 @@ const DEFAULT_HEADERS: Record<string, string> = { 'Content-Type': 'application/j
 
 interface ApiErrorBody {
   error?: { code?: number | null; message?: string };
+  code?: number | null;
+  message?: string;
 }
 
 /** Typed fetch error with the safe server message (no SQL internals/credentials). */
@@ -47,7 +49,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     body = null;
   }
   if (!res.ok) {
-    const err = (body as ApiErrorBody | null)?.error;
+    const b = body as ApiErrorBody | null;
+    const err = b?.error ?? b;
     throw new ApiError(res.status, err?.code ?? null, err?.message ?? 'Có lỗi từ hệ thống. Vui lòng thử lại.');
   }
   return body as T;

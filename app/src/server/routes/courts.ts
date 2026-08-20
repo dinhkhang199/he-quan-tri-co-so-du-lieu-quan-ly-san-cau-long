@@ -6,7 +6,7 @@ import { mapSqlError } from '../../shared/spError.js';
 import type { MappedError } from '../../shared/spError.js';
 import type { AvailableCourt, CourtSearchResponse } from '../../shared/types.js';
 import type { SizeType, SurfaceType } from '../../shared/contract.js';
-import { isValidCourtId, validateWindow, type WallClock } from '../time.js';
+import { isValidCourtId, toSqlDate, validateWindow, type WallClock } from '../time.js';
 
 /**
  * Public court availability API (Phase 2.3).
@@ -80,13 +80,12 @@ export function createCourtsRouter(cfg: AppConfig): Router {
       res.status(400).json({ error: { code: null, message: validation.message } });
       return;
     }
-    // Narrowed, plain captures so the async closure keeps the values.
-    const { startSql, endSql, courtId } = validation;
+    const { start, end, courtId, startSql, endSql } = validation;
 
     try {
       const rows = await runShared(cfg, async (request) => {
-        const r = request.input('StartTime', sql.DateTime2(0), startSql);
-        r.input('EndTime', sql.DateTime2(0), endSql);
+        const r = request.input('StartTime', sql.DateTime2(0), toSqlDate(start));
+        r.input('EndTime', sql.DateTime2(0), toSqlDate(end));
         if (courtId) {
           r.input('CourtId', sql.UniqueIdentifier, courtId);
         }

@@ -123,7 +123,7 @@ export function createNotificationsRouter(sessionDb: SessionDb): Router {
         res.status(401).json({ error: { code: null, message: mapped.message ?? 'Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.' } });
         return;
       }
-      res.status(listStatus(mapped)).json(serializeError(mapped));
+      res.status(listStatus(mapped)).json({ error: serializeError(mapped) });
     }
   });
 
@@ -183,7 +183,7 @@ export function createNotificationsRouter(sessionDb: SessionDb): Router {
         res.status(401).json({ error: { code: null, message: mapped.message ?? 'Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.' } });
         return;
       }
-      res.status(readStatus(mapped)).json(serializeError(mapped));
+      res.status(readStatus(mapped)).json({ error: serializeError(mapped) });
     }
   });
 
