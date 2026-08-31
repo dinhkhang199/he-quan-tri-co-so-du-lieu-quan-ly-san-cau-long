@@ -188,12 +188,8 @@ export function createAuthRouter(cfg: AppConfig, sessionDb: SessionDb): Router {
           emailSent = (await sendPasswordResetMail(cfg, row.Email, row.ResetCode)).sent;
         } catch (mailError) {
           console.error(`[auth] không thể gửi email khôi phục: ${String(mailError)}`);
-          if (cfg.isProd) {
-            res.status(503).json({
-              error: { code: null, message: 'Chưa thể gửi email khôi phục. Vui lòng thử lại sau.' },
-            });
-            return;
-          }
+          // In production, do not return 503 to avoid side-channel account enumeration.
+          // Failure is logged server-side and identical generic 200 response is returned.
         }
       }
 
