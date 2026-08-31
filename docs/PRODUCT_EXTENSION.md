@@ -54,7 +54,7 @@ Tài liệu này phân định ranh giới kiến trúc rõ ràng giữa **Phầ
 | Users.PasswordResetExpiresAt | Thời điểm hết hạn của mã OTP (mặc định 10 phút). | DATETIME2(0) NULL |
 | Users.PasswordResetAttempts | Đếm số lần nhập sai mã OTP (tối đa 5 lần). | TINYINT NOT NULL DEFAULT 0 |
 | IX_Users_Email | Index hỗ trợ tra cứu người dùng qua email. | Non-clustered standard index |
-| dbo.sp_Register | Đăng ký tài khoản CUSTOMER mới từ giao diện web (bắt buộc Email). | Sử dụng sys.sp_getapplock theo email để chống race condition tuyệt đối mà không phá cấu trúc 5 bảng lõi. |
+| dbo.sp_Register | Đăng ký tài khoản CUSTOMER mới từ giao diện web (bắt buộc Email). | Registration email uniqueness được serialization trong dbo.sp_Register bằng transaction-scoped sys.sp_getapplock (khóa tài nguyên BCMS_Register_Email_<email>), bảo đảm an toàn tương tranh tuyệt đối mà không phá cấu trúc 5 bảng lõi. |
 | dbo.sp_RequestPasswordReset | Sinh mã OTP 6 chữ số ngẫu nhiên an toàn (sử dụng toán tử 64-bit tránh tràn số ABS INT_MIN). | Chống account enumeration (lỗi 50210); yêu cầu mã mới sẽ vô hiệu hóa mã cũ. |
 | dbo.sp_ResetPassword | Kiểm tra OTP, số lần thử (< 5), thời hạn và cập nhật mật khẩu mới. | Đổi mật khẩu thành công sẽ hủy hoàn toàn mã reset (Single-use, chống replay). |
 
@@ -75,6 +75,8 @@ odemailer với cấu hình linh hoạt qua biến môi trường SMTP_HOST, SMT
 | **Course Functional Tests** | database/09_tests_functional.sql | **47/47 PASS** | Toàn bộ 21 SP tests, 3 TX tests, 4 Trigger tests, 5 Table invariants, View & Function tests đạt 100%. |
 | **Audit Actor Regression** | 	ests/regression/audit_actor.sql | **PASS** | Xác nhận ActivityLogs ghi đúng actor phiên đăng nhập (Manager, Customer). |
 | **Product Extension Tests** | 	ests/regression/auth_features.sql | **16/16 PASS** | Kiểm thử đăng ký bắt buộc email, chống trùng lặp, hash OTP, chống tràn số, chống enumeration, khóa 5 lần sai, hết hạn 10p, single-use, đổi mật khẩu và vô hiệu mật khẩu cũ. |
+| **Real Concurrent Email (CC-EMAIL-01)** | 	ests/concurrency/register_email_session_A.sql & _B.sql | **PASS** | 2 phiên chạy đồng thời cùng Email: 1 phiên thành công, 1 phiên bị chặn lỗi 50204 qua sp_getapplock, COUNT(*) = 1. |
+| **Real Backup / Restore Verification** | 	ests/regression/backup_restore_runtime.sql | **PASS** | BACKUP DATABASE ➔ RESTORE VERIFYONLY ➔ RESTORE sang BadmintonCourtManagement_ProductTest_RestoreVerify. So khớp 100% 5 bảng lõi và 5/4/2/17/6 objects. |
 | **Transaction Anomalies (Demo)** | database/10_tests_transactions.sql | **PASS** | Kiểm chứng cơ chế ngăn ngừa Phantom Read bằng mức cô lập SERIALIZABLE. |
 | **Concurrency CC-01** | database/11_*.sql & database/12_*.sql | **PASS** | Approve tương tranh trên 2 booking overlap -> đúng 1 BOOKED, 1 bị từ chối; không lost update. |
 | **Deadlock DL-01/DL-02/DL-03** | database/13_*.sql & database/14_*.sql | **PASS** | Bắt lỗi 1205 deadlock victim và chứng minh lock ordering Court -> Booking giải quyết triệt để deadlock. |

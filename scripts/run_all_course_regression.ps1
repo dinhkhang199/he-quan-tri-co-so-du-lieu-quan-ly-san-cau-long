@@ -1,4 +1,4 @@
-﻿# ============================================================
+# ============================================================
 # Script: run_all_course_regression.ps1
 # Mục đích: Chạy toàn bộ regression test suite môn học trên BadmintonCourtManagement_ProductTest
 # ============================================================
@@ -25,6 +25,7 @@ function Run-ScriptOnTestDb($filePath, $title) {
 Run-ScriptOnTestDb "database\09_tests_functional.sql" "09 Functional Tests (47/47)"
 Run-ScriptOnTestDb "tests\regression\audit_actor.sql" "Audit Actor Regression"
 Run-ScriptOnTestDb "tests\regression\auth_features.sql" "Product Auth Extension Suite (16/16)"
+Run-ScriptOnTestDb "tests\regression\backup_restore_runtime.sql" "Backup & Restore Runtime Verification"
 
 Write-Host "
 [ALL RUNS COMPLETE]"

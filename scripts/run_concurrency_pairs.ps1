@@ -1,4 +1,4 @@
-﻿# ============================================================
+# ============================================================
 # Script: run_concurrency_pairs.ps1
 # Chạy các kịch bản concurrency song song (A + B) trên BadmintonCourtManagement_ProductTest
 # ============================================================
@@ -49,6 +49,7 @@ Run-ConcurrencyPair "tests\concurrency\lost_update_session_A.sql" "tests\concurr
 Run-ConcurrencyPair "tests\concurrency\dirty_read_session_A.sql" "tests\concurrency\dirty_read_session_B.sql" 800
 Run-ConcurrencyPair "tests\concurrency\nonrepeatable_session_A.sql" "tests\concurrency\nonrepeatable_session_B.sql" 800
 Run-ConcurrencyPair "tests\concurrency\phantom_session_A.sql" "tests\concurrency\phantom_session_B.sql" 800
+Run-ConcurrencyPair "tests\concurrency\register_email_session_A.sql" "tests\concurrency\register_email_session_B.sql" 400
 
 Write-Host "
 ========================================================"
