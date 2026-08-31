@@ -1,6 +1,21 @@
-import type { NextFunction, Request, Response } from 'express';
+﻿import type { NextFunction, Request, Response } from 'express';
 
-export function createRateLimiter(limit: number, windowMs = 60_000) {
+export interface RateLimiterOptions {
+  message?: string;
+  windowMs?: number;
+}
+
+export function createRateLimiter(
+  limit: number,
+  optionsOrWindowMs: number | RateLimiterOptions = 60_000,
+) {
+  const options: RateLimiterOptions =
+    typeof optionsOrWindowMs === 'number'
+      ? { windowMs: optionsOrWindowMs }
+      : optionsOrWindowMs;
+  const windowMs = options.windowMs ?? 60_000;
+  const message = options.message ?? 'Quá nhiều yêu cầu. Vui lòng thử lại sau một phút.';
+
   const hits = new Map<string, number[]>();
   const cleanup = setInterval(() => {
     const cutoff = Date.now() - windowMs;
@@ -11,6 +26,7 @@ export function createRateLimiter(limit: number, windowMs = 60_000) {
     }
   }, windowMs);
   cleanup.unref();
+
   return (req: Request, res: Response, next: NextFunction): void => {
     if (limit <= 0) return next();
     const now = Date.now();
@@ -18,7 +34,7 @@ export function createRateLimiter(limit: number, windowMs = 60_000) {
     const recent = (hits.get(key) ?? []).filter((stamp) => stamp > now - windowMs);
     if (recent.length >= limit) {
       res.setHeader('Retry-After', String(Math.ceil(windowMs / 1000)));
-      res.status(429).json({ error: { message: 'Quá nhiều lần đăng nhập. Vui lòng thử lại sau một phút.' } });
+      res.status(429).json({ error: { code: null, message } });
       return;
     }
     recent.push(now);

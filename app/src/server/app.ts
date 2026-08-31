@@ -23,8 +23,9 @@ export function createApp(cfg: AppConfig, sessionDb: SessionDb): express.Express
   app.use(createSessionMiddleware(cfg));
 
   app.use('/api', createHealthRouter(cfg, () => sessionDb.activeCount()));
-  app.use('/api/auth/login', createRateLimiter(cfg.loginRateLimitPerMinute));
-  app.use('/api/auth', createAuthRouter(sessionDb));
+  app.use('/api/auth/login', createRateLimiter(cfg.loginRateLimitPerMinute, { message: 'Quá nhiều lần đăng nhập. Vui lòng thử lại sau một phút.' }));
+  app.use('/api/auth/register', createRateLimiter(cfg.registerRateLimitPerMinute, { message: 'Quá nhiều lần thử đăng ký. Vui lòng thử lại sau một phút.' }));
+  app.use('/api/auth', createAuthRouter(cfg, sessionDb));
   app.use('/api/courts', createCourtsRouter(cfg));
   app.use('/api/bookings', createBookingsRouter(sessionDb));
   app.use('/api/manager/bookings', createManagerRouter(sessionDb));

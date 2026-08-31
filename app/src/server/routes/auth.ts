@@ -4,8 +4,18 @@ import type { UserRole } from '../../shared/contract.js';
 import type { AuthUser } from '../../shared/types.js';
 import { mapSqlError } from '../../shared/spError.js';
 import type { MappedError } from '../../shared/spError.js';
-import type { SessionDb } from '../db/index.js';
+import type { AppConfig } from '../config.js';
+import { runShared, type SessionDb } from '../db/index.js';
 import { SESSION_COOKIE_NAME } from '../middleware/session.js';
+import {
+  emailError,
+  normalizeEmail,
+  normalizePhone,
+  normalizeUsername,
+  passwordError,
+  phoneError,
+  usernameError,
+} from '../authValidation.js';
 
 declare module 'express-session' {
   interface SessionData {
@@ -22,6 +32,17 @@ interface LoginRow {
   LastLogin: Date | string | null;
 }
 
+/** Raw dbo.sp_Register result row. */
+interface RegisterRow {
+  UserId: string;
+  Username: string;
+  Role: string;
+  PhoneNumber: string;
+  Email: string | null;
+  IsActive: boolean | number;
+  CreatedAt: Date | string;
+}
+
 /** The only privileged application roles (GUEST exists in DB but is not a login role). */
 const APP_ROLES: readonly UserRole[] = ['MANAGER', 'COURT_MANAGER', 'CUSTOMER'];
 const UNAUTHENTICATED_MESSAGE = 'Chưa đăng nhập.';
@@ -35,6 +56,7 @@ function toIso(value: Date | string | null): string | null {
 function authFailureStatus(mapped: MappedError): number {
   if (mapped.code === 50001) return 401;
   if (mapped.code === 50002) return 403;
+  if (mapped.code === 50201 || mapped.code === 50202 || mapped.code === 50204) return 409;
   // A system-level failure (connection, unknown code) is a server problem, not a 4xx business error.
   return mapped.code === null ? 500 : 400;
 }
@@ -51,13 +73,69 @@ function serializeError(mapped: MappedError) {
 }
 
 /**
- * Authentication API. sp_Login runs exactly once on the session's dedicated
- * SQL connection (see SessionDb); that connection is kept for the web-session
- * lifetime so SESSION_CONTEXT survives. Session id is regenerated BEFORE the
- * dedicated connection is acquired, so the binding never points at an old id.
+ * Authentication API.
+ * - sp_Register: public registration of new CUSTOMER accounts via shared connection pool.
+ * - sp_Login: runs exactly once on the session's dedicated SQL connection (see SessionDb);
+ *   that connection is kept for the web-session lifetime so SESSION_CONTEXT survives.
  */
-export function createAuthRouter(sessionDb: SessionDb): Router {
+export function createAuthRouter(cfg: AppConfig, sessionDb: SessionDb): Router {
   const router = Router();
+
+  router.post('/register', async (req, res) => {
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    if (
+      typeof body.username !== 'string' ||
+      typeof body.phoneNumber !== 'string' ||
+      typeof body.password !== 'string' ||
+      typeof body.confirmPassword !== 'string'
+    ) {
+      res.status(400).json({ error: { code: null, message: 'Vui lòng nhập đầy đủ thông tin đăng ký.' } });
+      return;
+    }
+
+    const username = normalizeUsername(body.username);
+    const phoneNumber = normalizePhone(body.phoneNumber);
+    const email = typeof body.email === 'string' && body.email.trim().length > 0
+      ? normalizeEmail(body.email)
+      : null;
+
+    const validationError =
+      usernameError(username) ??
+      phoneError(phoneNumber) ??
+      (email ? emailError(email) : null) ??
+      passwordError(body.password);
+
+    if (validationError) {
+      res.status(400).json({ error: { code: null, message: validationError } });
+      return;
+    }
+    if (body.password !== body.confirmPassword) {
+      res.status(400).json({ error: { code: null, message: 'Mật khẩu xác nhận không khớp.' } });
+      return;
+    }
+
+    try {
+      const row = await runShared(cfg, async (request) => {
+        const result = await request
+          .input('Username', sql.NVarChar(50), username)
+          .input('Password', sql.NVarChar(200), body.password)
+          .input('PhoneNumber', sql.NVarChar(20), phoneNumber)
+          .input('Email', sql.NVarChar(254), email)
+          .execute('dbo.sp_Register');
+        return result.recordset[0] as RegisterRow | undefined;
+      });
+
+      if (!row) throw new Error('sp_Register returned no user row.');
+
+      res.status(201).json({
+        message: 'Đăng ký thành công. Bạn có thể đăng nhập ngay.',
+        user: { userId: row.UserId, username: row.Username, role: row.Role },
+      });
+    } catch (err) {
+      const mapped = mapSqlError(err);
+      res.status(authFailureStatus(mapped)).json({ error: serializeError(mapped) });
+    }
+  });
 
   router.post('/login', async (req, res) => {
     const { username, password } = (req.body ?? {}) as { username?: unknown; password?: unknown };
