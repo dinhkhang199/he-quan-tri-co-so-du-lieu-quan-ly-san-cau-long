@@ -56,10 +56,74 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return body as T;
 }
 
+export interface RegisterParams {
+  username: string;
+  phoneNumber: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
+export interface RegisterResponse {
+  message: string;
+  user: {
+    userId: string;
+    username: string;
+    role: string;
+  };
+}
+
+export interface ForgotPasswordParams {
+  username: string;
+  email: string;
+}
+
+export interface ForgotPasswordResponse {
+  message: string;
+  expiresInSeconds?: number;
+  emailMasked?: string;
+  developmentCode?: string;
+  matched?: boolean;
+  emailSent?: boolean;
+}
+
+export interface ResetPasswordParams {
+  username: string;
+  email: string;
+  resetCode: string;
+  password: string;
+  confirmPassword: string;
+}
+
+export interface ResetPasswordResponse {
+  message: string;
+}
+
 export function loginRequest(username: string, password: string): Promise<{ user: AuthUser }> {
   return request<{ user: AuthUser }>('/api/auth/login', {
     method: 'POST',
     body: JSON.stringify({ username, password }),
+  });
+}
+
+export function registerRequest(params: RegisterParams): Promise<RegisterResponse> {
+  return request<RegisterResponse>('/api/auth/register', {
+    method: 'POST',
+    body: JSON.stringify(params),
+  });
+}
+
+export function forgotPasswordRequest(params: ForgotPasswordParams): Promise<ForgotPasswordResponse> {
+  return request<ForgotPasswordResponse>('/api/auth/password/forgot', {
+    method: 'POST',
+    body: JSON.stringify(params),
+  });
+}
+
+export function resetPasswordRequest(params: ResetPasswordParams): Promise<ResetPasswordResponse> {
+  return request<ResetPasswordResponse>('/api/auth/password/reset', {
+    method: 'POST',
+    body: JSON.stringify(params),
   });
 }
 

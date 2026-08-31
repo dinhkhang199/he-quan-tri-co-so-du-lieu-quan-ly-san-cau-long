@@ -163,6 +163,11 @@ export function LoginPage() {
             </Button>
           </form>
 
+          <div className="bp-login__account-links">
+            <NavLink to="/forgot-password">Quên mật khẩu?</NavLink>
+            <NavLink to="/register">Đăng ký tài khoản</NavLink>
+          </div>
+
           <div className="bp-login__guest-wrap">
             <NavLink to="/courts" className="bp-login__guest">
               <span>Tiếp tục với tư cách khách</span>
