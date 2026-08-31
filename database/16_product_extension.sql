@@ -44,14 +44,14 @@ WHERE Email IS NULL
   AND Username IN (N'manager', N'courtmanager1', N'courtmanager2', N'customer1', N'customer2', N'customer3', N'inactive_user');
 GO
 
--- 3. Check constraint cho định dạng Email
+-- 3. Check constraint cho định dạng Email trên bảng Users
 IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = N'CK_Users_Email_Format')
     ALTER TABLE dbo.Users WITH CHECK ADD CONSTRAINT CK_Users_Email_Format CHECK (
         Email IS NULL OR (LEN(Email) BETWEEN 5 AND 254 AND Email NOT LIKE N'% %' AND Email LIKE N'%_@_%._%')
     );
 GO
 
--- 4. Standard non-filtered index cho Email (tra cứu nhanh, không kích hoạt lỗi QUOTED_IDENTIFIER của legacy harness)
+-- 4. Standard non-filtered index trên Users (giúp tra cứu nhanh, bảo đảm chính xác 5 bảng lõi)
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_Users_Email' AND object_id = OBJECT_ID(N'dbo.Users'))
     CREATE INDEX IX_Users_Email ON dbo.Users(Email);
 GO
@@ -65,7 +65,7 @@ CREATE PROCEDURE dbo.sp_Register
     @Username    NVARCHAR(50),
     @Password    NVARCHAR(200),
     @PhoneNumber NVARCHAR(20),
-    @Email       NVARCHAR(254) = NULL
+    @Email       NVARCHAR(254)
 WITH EXECUTE AS OWNER
 AS
 BEGIN
@@ -75,7 +75,7 @@ BEGIN
     -- Chuẩn hóa và validate input
     SET @Username = LTRIM(RTRIM(@Username));
     SET @PhoneNumber = LTRIM(RTRIM(@PhoneNumber));
-    SET @Email = NULLIF(LTRIM(RTRIM(@Email)), N'');
+    SET @Email = LTRIM(RTRIM(@Email));
 
     IF @Username IS NULL OR LEN(@Username) < 3 OR LEN(@Username) > 50
         THROW 50205, N'Tên đăng nhập phải dài từ 3 đến 50 ký tự.', 1;
@@ -86,24 +86,37 @@ BEGIN
     IF @PhoneNumber IS NULL OR LEN(@PhoneNumber) < 9 OR LEN(@PhoneNumber) > 15 OR @PhoneNumber LIKE N'%[^0-9]%'
         THROW 50207, N'Số điện thoại không hợp lệ (phải gồm 9–15 chữ số).', 1;
 
-    IF @Email IS NOT NULL AND (LEN(@Email) < 5 OR LEN(@Email) > 254 OR @Email LIKE N'% %' OR @Email NOT LIKE N'%_@_%._%')
-        THROW 50208, N'Email không hợp lệ.', 1;
-
-    -- Kiểm tra trùng lặp
-    IF EXISTS (SELECT 1 FROM dbo.Users WHERE Username = @Username)
-        THROW 50201, N'Tên đăng nhập đã tồn tại trong hệ thống.', 1;
-
-    IF EXISTS (SELECT 1 FROM dbo.Users WHERE PhoneNumber = @PhoneNumber)
-        THROW 50202, N'Số điện thoại đã được đăng ký cho tài khoản khác.', 1;
-
-    IF @Email IS NOT NULL AND EXISTS (SELECT 1 FROM dbo.Users WHERE Email = @Email)
-        THROW 50204, N'Email đã được đăng ký cho tài khoản khác.', 1;
+    -- Email là BẮT BUỘC cho luồng sản phẩm (phục vụ khôi phục mật khẩu)
+    IF @Email IS NULL OR LEN(@Email) < 5 OR LEN(@Email) > 254 OR @Email LIKE N'% %' OR @Email NOT LIKE N'%_@_%._%'
+        THROW 50208, N'Email là bắt buộc và phải có định dạng hợp lệ.', 1;
 
     DECLARE @NewUserId UNIQUEIDENTIFIER = NEWID();
     DECLARE @PasswordHash VARBINARY(64) = HASHBYTES('SHA2_256', N'bcms|' + @Password);
+    DECLARE @EmailLockResource NVARCHAR(270) = N'BCMS_Register_Email_' + LOWER(@Email);
+    DECLARE @LockResult INT;
 
     BEGIN TRY
         BEGIN TRAN;
+            -- Khóa ứng dụng độc quyền theo Email ngăn chặn tuyệt đối Race Condition tương tranh
+            EXEC @LockResult = sys.sp_getapplock
+                @Resource = @EmailLockResource,
+                @LockMode = N'Exclusive',
+                @LockOwner = N'Transaction',
+                @LockTimeout = 5000;
+
+            IF @LockResult < 0
+                THROW 50204, N'Email đã được đăng ký cho tài khoản khác.', 1;
+
+            -- Kiểm tra trùng lặp tuần tự dưới khóa
+            IF EXISTS (SELECT 1 FROM dbo.Users WHERE Username = @Username)
+                THROW 50201, N'Tên đăng nhập đã tồn tại trong hệ thống.', 1;
+
+            IF EXISTS (SELECT 1 FROM dbo.Users WHERE PhoneNumber = @PhoneNumber)
+                THROW 50202, N'Số điện thoại đã được đăng ký cho tài khoản khác.', 1;
+
+            IF EXISTS (SELECT 1 FROM dbo.Users WHERE LOWER(Email) = LOWER(@Email))
+                THROW 50204, N'Email đã được đăng ký cho tài khoản khác.', 1;
+
             INSERT INTO dbo.Users (UserId, Username, PasswordHash, Role, PhoneNumber, Email, IsActive)
             VALUES (@NewUserId, @Username, @PasswordHash, N'CUSTOMER', @PhoneNumber, @Email, 1);
         COMMIT TRAN;
@@ -148,15 +161,16 @@ BEGIN
     IF @TargetUserId IS NULL OR @StoredEmail IS NULL OR LOWER(@StoredEmail) <> LOWER(@Email) OR @IsActive <> 1
         THROW 50210, N'Thông tin tài khoản không khớp.', 1;
 
-    -- Sinh mã OTP 6 chữ số ngẫu nhiên
+    -- Sinh mã OTP 6 chữ số ngẫu nhiên an toàn (Khắc phục lỗi tràn số ABS INT_MIN)
     DECLARE @RandomBinary VARBINARY(4) = CRYPT_GEN_RANDOM(4);
-    DECLARE @RandomNum INT = ABS(CAST(@RandomBinary AS INT)) % 1000000;
+    DECLARE @RandomNum INT = (CAST(@RandomBinary AS BIGINT) & 0x7FFFFFFF) % 1000000;
     DECLARE @ResetCode NVARCHAR(6) = RIGHT(N'000000' + CAST(@RandomNum AS NVARCHAR(6)), 6);
     DECLARE @ResetCodeHash VARBINARY(64) = HASHBYTES('SHA2_256', N'bcms-reset|' + @ResetCode);
     DECLARE @ExpiresAt DATETIME2(0) = DATEADD(MINUTE, 10, SYSDATETIME());
 
     BEGIN TRY
         BEGIN TRAN;
+            -- Yêu cầu mới vô hiệu hóa mã cũ và đặt lại số lần thử
             UPDATE dbo.Users
             SET PasswordResetCodeHash = @ResetCodeHash,
                 PasswordResetExpiresAt = @ExpiresAt,
@@ -220,6 +234,7 @@ BEGIN
             IF @TargetUserId IS NULL OR @StoredEmail IS NULL OR LOWER(@StoredEmail) <> LOWER(@Email) OR @IsActive <> 1
                 THROW 50210, N'Thông tin tài khoản không khớp.', 1;
 
+            -- Kiểm tra mã có tồn tại, chưa hết hạn và chưa bị khóa do 5 lần nhập sai
             IF @StoredHash IS NULL OR @StoredExpiry IS NULL OR @StoredExpiry <= SYSDATETIME() OR @StoredAttempts >= 5
                 THROW 50211, N'Mã khôi phục đã hết hạn hoặc không còn hiệu lực.', 1;
 
@@ -234,7 +249,7 @@ BEGIN
                 THROW 50212, N'Mã khôi phục không đúng hoặc không hợp lệ.', 1;
             END;
 
-            -- Mật khẩu đúng: Cập nhật PasswordHash và hủy mã reset
+            -- Mật khẩu đúng: Cập nhật PasswordHash và hủy hoàn toàn mã reset (chống tái sử dụng)
             DECLARE @NewHash VARBINARY(64) = HASHBYTES('SHA2_256', N'bcms|' + @NewPassword);
             UPDATE dbo.Users
             SET PasswordHash = @NewHash,

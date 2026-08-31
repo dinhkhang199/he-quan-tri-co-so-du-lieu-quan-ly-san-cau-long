@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { NavLink } from 'react-router-dom';
 import { registerRequest } from '../api/client';
@@ -20,6 +20,10 @@ export function RegisterPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (submitting) return;
+    if (!email || email.trim().length === 0) {
+      setError('Vui lòng nhập địa chỉ email.');
+      return;
+    }
     if (password !== confirmPassword) {
       setError('Mật khẩu xác nhận không khớp.');
       return;

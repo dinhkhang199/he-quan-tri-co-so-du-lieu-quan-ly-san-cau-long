@@ -27,10 +27,14 @@ export function phoneError(value: string): string | null {
   return PHONE_PATTERN.test(value) ? null : 'Số điện thoại phải gồm 9–15 chữ số.';
 }
 
-export function emailError(value: string): string | null {
-  return value.length >= 5 && value.length <= 254 && EMAIL_PATTERN.test(value)
+export function emailError(value: string | undefined | null): string | null {
+  if (!value || typeof value !== 'string' || value.trim().length === 0) {
+    return 'Email là bắt buộc.';
+  }
+  const normalized = normalizeEmail(value);
+  return normalized.length >= 5 && normalized.length <= 254 && EMAIL_PATTERN.test(normalized)
     ? null
-    : 'Email không hợp lệ.';
+    : 'Email không đúng định dạng.';
 }
 
 export function passwordError(value: string): string | null {

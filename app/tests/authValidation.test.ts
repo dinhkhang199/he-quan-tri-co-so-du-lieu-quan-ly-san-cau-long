@@ -1,4 +1,4 @@
-﻿import test from 'node:test';
+import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   emailError,
@@ -30,11 +30,13 @@ test('phoneError enforces 9 to 15 digits', () => {
   assert.equal(phoneError('090123456a'), 'Số điện thoại phải gồm 9–15 chữ số.');
 });
 
-test('emailError enforces safe email shape', () => {
+test('emailError enforces safe email shape and required presence', () => {
   assert.equal(emailError('user@example.com'), null);
-  assert.equal(emailError('plainaddress'), 'Email không hợp lệ.');
-  assert.equal(emailError('user@domain'), 'Email không hợp lệ.');
-  assert.equal(emailError('a@b.c'), 'Email không hợp lệ.');
+  assert.equal(emailError(''), 'Email là bắt buộc.');
+  assert.equal(emailError(undefined), 'Email là bắt buộc.');
+  assert.equal(emailError('plainaddress'), 'Email không đúng định dạng.');
+  assert.equal(emailError('user@domain'), 'Email không đúng định dạng.');
+  assert.equal(emailError('a@b.c'), 'Email không đúng định dạng.');
 });
 
 test('passwordError enforces length and letter+digit mixture', () => {

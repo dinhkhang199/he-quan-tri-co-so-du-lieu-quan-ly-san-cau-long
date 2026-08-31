@@ -108,23 +108,22 @@ export function createAuthRouter(cfg: AppConfig, sessionDb: SessionDb): Router {
     if (
       typeof body.username !== 'string' ||
       typeof body.phoneNumber !== 'string' ||
+      typeof body.email !== 'string' ||
       typeof body.password !== 'string' ||
       typeof body.confirmPassword !== 'string'
     ) {
-      res.status(400).json({ error: { code: null, message: 'Vui lòng nhập đầy đủ thông tin đăng ký.' } });
+      res.status(400).json({ error: { code: null, message: 'Vui lòng nhập đầy đủ thông tin đăng ký bao gồm email.' } });
       return;
     }
 
     const username = normalizeUsername(body.username);
     const phoneNumber = normalizePhone(body.phoneNumber);
-    const email = typeof body.email === 'string' && body.email.trim().length > 0
-      ? normalizeEmail(body.email)
-      : null;
+    const email = normalizeEmail(body.email);
 
     const validationError =
       usernameError(username) ??
       phoneError(phoneNumber) ??
-      (email ? emailError(email) : null) ??
+      emailError(email) ??
       passwordError(body.password);
 
     if (validationError) {
