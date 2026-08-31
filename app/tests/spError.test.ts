@@ -13,3 +13,9 @@ test('unknown and non-object errors remain unmapped', () => {
   assert.equal(mapSqlError(new Error('socket failed')).message, null);
   assert.equal(mapSqlError(null).code, null);
 });
+
+test('maps product extension errors accurately', () => {
+  const mapped = mapSqlError(Object.assign(new Error('dup user'), { number: 50201 }));
+  assert.equal(mapped.code, 50201);
+  assert.equal(mapped.message, 'Tên đăng nhập đã tồn tại trong hệ thống.');
+});

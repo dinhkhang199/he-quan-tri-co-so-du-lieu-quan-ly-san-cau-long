@@ -4,8 +4,20 @@ import type { UserRole } from '../../shared/contract.js';
 import type { AuthUser } from '../../shared/types.js';
 import { mapSqlError } from '../../shared/spError.js';
 import type { MappedError } from '../../shared/spError.js';
-import type { SessionDb } from '../db/index.js';
+import type { AppConfig } from '../config.js';
+import { runShared, type SessionDb } from '../db/index.js';
 import { SESSION_COOKIE_NAME } from '../middleware/session.js';
+import {
+  emailError,
+  normalizeEmail,
+  normalizePhone,
+  normalizeUsername,
+  passwordError,
+  phoneError,
+  resetCodeError,
+  usernameError,
+} from '../authValidation.js';
+import { sendPasswordResetMail } from '../mail/passwordResetMail.js';
 
 declare module 'express-session' {
   interface SessionData {
@@ -22,6 +34,26 @@ interface LoginRow {
   LastLogin: Date | string | null;
 }
 
+/** Raw dbo.sp_Register result row. */
+interface RegisterRow {
+  UserId: string;
+  Username: string;
+  Role: string;
+  PhoneNumber: string;
+  Email: string | null;
+  IsActive: boolean | number;
+  CreatedAt: Date | string;
+}
+
+/** Raw dbo.sp_RequestPasswordReset result row. */
+interface ResetRequestRow {
+  UserId: string;
+  Username: string;
+  Email: string;
+  ResetCode: string;
+  ExpiresAt: Date | string;
+}
+
 /** The only privileged application roles (GUEST exists in DB but is not a login role). */
 const APP_ROLES: readonly UserRole[] = ['MANAGER', 'COURT_MANAGER', 'CUSTOMER'];
 const UNAUTHENTICATED_MESSAGE = 'Chưa đăng nhập.';
@@ -31,10 +63,20 @@ function toIso(value: Date | string | null): string | null {
   return value instanceof Date ? value.toISOString() : String(value);
 }
 
+function maskEmail(email: string): string {
+  const atIndex = email.indexOf('@');
+  if (atIndex <= 1) return email;
+  const user = email.slice(0, atIndex);
+  const domain = email.slice(atIndex);
+  const visible = user.slice(0, Math.min(2, user.length));
+  return `${visible}***${domain}`;
+}
+
 /** Safe HTTP status for an auth failure mapped from the SQL error. */
 function authFailureStatus(mapped: MappedError): number {
   if (mapped.code === 50001) return 401;
   if (mapped.code === 50002) return 403;
+  if (mapped.code === 50201 || mapped.code === 50202 || mapped.code === 50204) return 409;
   // A system-level failure (connection, unknown code) is a server problem, not a 4xx business error.
   return mapped.code === null ? 500 : 400;
 }
@@ -51,13 +93,197 @@ function serializeError(mapped: MappedError) {
 }
 
 /**
- * Authentication API. sp_Login runs exactly once on the session's dedicated
- * SQL connection (see SessionDb); that connection is kept for the web-session
- * lifetime so SESSION_CONTEXT survives. Session id is regenerated BEFORE the
- * dedicated connection is acquired, so the binding never points at an old id.
+ * Authentication API.
+ * - sp_Register: public registration of new CUSTOMER accounts via shared connection pool.
+ * - sp_RequestPasswordReset: request OTP recovery code via email/shared connection.
+ * - sp_ResetPassword: reset password with valid OTP via shared connection.
+ * - sp_Login: runs exactly once on the session's dedicated SQL connection (see SessionDb);
+ *   that connection is kept for the web-session lifetime so SESSION_CONTEXT survives.
  */
-export function createAuthRouter(sessionDb: SessionDb): Router {
+export function createAuthRouter(cfg: AppConfig, sessionDb: SessionDb): Router {
   const router = Router();
+
+  router.post('/register', async (req, res) => {
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    if (
+      typeof body.username !== 'string' ||
+      typeof body.phoneNumber !== 'string' ||
+      typeof body.email !== 'string' ||
+      typeof body.password !== 'string' ||
+      typeof body.confirmPassword !== 'string'
+    ) {
+      res.status(400).json({ error: { code: null, message: 'Vui lòng nhập đầy đủ thông tin đăng ký bao gồm email.' } });
+      return;
+    }
+
+    const username = normalizeUsername(body.username);
+    const phoneNumber = normalizePhone(body.phoneNumber);
+    const email = normalizeEmail(body.email);
+
+    const validationError =
+      usernameError(username) ??
+      phoneError(phoneNumber) ??
+      emailError(email) ??
+      passwordError(body.password);
+
+    if (validationError) {
+      res.status(400).json({ error: { code: null, message: validationError } });
+      return;
+    }
+    if (body.password !== body.confirmPassword) {
+      res.status(400).json({ error: { code: null, message: 'Mật khẩu xác nhận không khớp.' } });
+      return;
+    }
+
+    try {
+      const row = await runShared(cfg, async (request) => {
+        const result = await request
+          .input('Username', sql.NVarChar(50), username)
+          .input('Password', sql.NVarChar(200), body.password)
+          .input('PhoneNumber', sql.NVarChar(20), phoneNumber)
+          .input('Email', sql.NVarChar(254), email)
+          .execute('dbo.sp_Register');
+        return result.recordset[0] as RegisterRow | undefined;
+      });
+
+      if (!row) throw new Error('sp_Register returned no user row.');
+
+      res.status(201).json({
+        message: 'Đăng ký thành công. Bạn có thể đăng nhập ngay.',
+        user: { userId: row.UserId, username: row.Username, role: row.Role },
+      });
+    } catch (err) {
+      const mapped = mapSqlError(err);
+      res.status(authFailureStatus(mapped)).json({ error: serializeError(mapped) });
+    }
+  });
+
+  router.post('/password/forgot', async (req, res) => {
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    if (typeof body.username !== 'string' || typeof body.email !== 'string') {
+      res.status(400).json({ error: { code: null, message: 'Vui lòng nhập tên đăng nhập và email.' } });
+      return;
+    }
+
+    const username = normalizeUsername(body.username);
+    const email = normalizeEmail(body.email);
+    const validationError = usernameError(username) ?? emailError(email);
+    if (validationError) {
+      res.status(400).json({ error: { code: null, message: validationError } });
+      return;
+    }
+
+    try {
+      const row = await runShared(cfg, async (request) => {
+        const result = await request
+          .input('Username', sql.NVarChar(50), username)
+          .input('Email', sql.NVarChar(254), email)
+          .execute('dbo.sp_RequestPasswordReset');
+        return result.recordset[0] as ResetRequestRow | undefined;
+      });
+
+      let emailSent = false;
+      if (row) {
+        try {
+          emailSent = (await sendPasswordResetMail(cfg, row.Email, row.ResetCode)).sent;
+        } catch (mailError) {
+          console.error(`[auth] không thể gửi email khôi phục: ${String(mailError)}`);
+          // In production, do not return 503 to avoid side-channel account enumeration.
+          // Failure is logged server-side and identical generic 200 response is returned.
+        }
+      }
+
+      const baseResponse = {
+        message: 'Nếu thông tin khớp, mã khôi phục đã được gửi qua email và có hiệu lực trong 10 phút.',
+        expiresInSeconds: 600,
+      };
+
+      if (cfg.isProd) {
+        res.json(baseResponse);
+        return;
+      }
+
+      res.json({
+        ...baseResponse,
+        matched: true,
+        emailMasked: row ? maskEmail(row.Email) : undefined,
+        emailSent,
+        ...(row?.ResetCode ? { developmentCode: row.ResetCode } : {}),
+      });
+    } catch (err) {
+      const mapped = mapSqlError(err);
+      // Account enumeration protection: return identical generic message on unknown user
+      if (mapped.code === 50210) {
+        const baseResponse = {
+          message: 'Nếu thông tin khớp, mã khôi phục đã được gửi qua email và có hiệu lực trong 10 phút.',
+          expiresInSeconds: 600,
+        };
+        if (cfg.isProd) {
+          res.json(baseResponse);
+          return;
+        }
+        res.json({
+          ...baseResponse,
+          matched: false,
+        });
+        return;
+      }
+      res.status(mapped.code === null ? 500 : 400).json({ error: serializeError(mapped) });
+    }
+  });
+
+  router.post('/password/reset', async (req, res) => {
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    if (
+      typeof body.username !== 'string' ||
+      typeof body.email !== 'string' ||
+      typeof body.resetCode !== 'string' ||
+      typeof body.password !== 'string' ||
+      typeof body.confirmPassword !== 'string'
+    ) {
+      res.status(400).json({ error: { code: null, message: 'Vui lòng nhập đầy đủ thông tin đặt lại mật khẩu.' } });
+      return;
+    }
+
+    const username = normalizeUsername(body.username);
+    const email = normalizeEmail(body.email);
+    const validationError =
+      usernameError(username) ?? emailError(email) ?? resetCodeError(body.resetCode) ?? passwordError(body.password);
+    if (validationError) {
+      res.status(400).json({ error: { code: null, message: validationError } });
+      return;
+    }
+    if (body.password !== body.confirmPassword) {
+      res.status(400).json({ error: { code: null, message: 'Mật khẩu xác nhận không khớp.' } });
+      return;
+    }
+
+    try {
+      await runShared(cfg, async (request) => {
+        await request
+          .input('Username', sql.NVarChar(50), username)
+          .input('Email', sql.NVarChar(254), email)
+          .input('ResetCode', sql.NVarChar(20), body.resetCode)
+          .input('NewPassword', sql.NVarChar(200), body.password)
+          .execute('dbo.sp_ResetPassword');
+      });
+
+      res.json({ message: 'Đổi mật khẩu thành công. Bạn có thể đăng nhập bằng mật khẩu mới.' });
+    } catch (err) {
+      const mapped = mapSqlError(err);
+      if (mapped.code === 50210 || mapped.code === 50211 || mapped.code === 50212) {
+        console.error(`[auth] reset password rejected (code=${mapped.code}): ${mapped.message}`);
+        res.status(400).json({
+          error: {
+            code: null,
+            message: 'Mã khôi phục hoặc thông tin tài khoản không hợp lệ.',
+          },
+        });
+        return;
+      }
+      res.status(mapped.code === null ? 500 : 400).json({ error: serializeError(mapped) });
+    }
+  });
 
   router.post('/login', async (req, res) => {
     const { username, password } = (req.body ?? {}) as { username?: unknown; password?: unknown };

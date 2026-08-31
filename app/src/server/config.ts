@@ -18,6 +18,15 @@ export interface AppConfig {
   sessionIdleTimeoutMs: number;
   sessionSweepIntervalMs: number;
   loginRateLimitPerMinute: number;
+  registerRateLimitPerMinute: number;
+  forgotRateLimitPerMinute: number;
+  resetRateLimitPerMinute: number;
+  smtpHost: string;
+  smtpPort: number;
+  smtpSecure: boolean;
+  smtpUser: string;
+  smtpPassword: string;
+  mailFrom: string;
   port: number;
   isProd: boolean;
   serveClient: boolean;
@@ -47,6 +56,15 @@ export function loadConfig(): AppConfig {
     sessionIdleTimeoutMs: Number(process.env.SESSION_IDLE_TIMEOUT_MS ?? 1000 * 60 * 30),
     sessionSweepIntervalMs: Number(process.env.SESSION_SWEEP_INTERVAL_MS ?? 1000 * 60),
     loginRateLimitPerMinute: Number(process.env.LOGIN_RATE_LIMIT_PER_MINUTE ?? 60),
+    registerRateLimitPerMinute: Number(process.env.REGISTER_RATE_LIMIT_PER_MINUTE ?? 20),
+    forgotRateLimitPerMinute: Number(process.env.FORGOT_RATE_LIMIT_PER_MINUTE ?? 10),
+    resetRateLimitPerMinute: Number(process.env.RESET_RATE_LIMIT_PER_MINUTE ?? 10),
+    smtpHost: process.env.SMTP_HOST ?? '',
+    smtpPort: Number(process.env.SMTP_PORT ?? 587),
+    smtpSecure: process.env.SMTP_SECURE === 'true',
+    smtpUser: process.env.SMTP_USER ?? '',
+    smtpPassword: process.env.SMTP_PASSWORD ?? '',
+    mailFrom: process.env.MAIL_FROM ?? 'BadmintonPro <no-reply@badmintonpro.local>',
     port: Number(process.env.APP_PORT ?? 3000),
     isProd: process.env.NODE_ENV === 'production',
     serveClient: process.argv.includes('--serve-client'),
