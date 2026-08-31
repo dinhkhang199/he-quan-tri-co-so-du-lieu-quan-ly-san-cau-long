@@ -11,6 +11,7 @@ import { createNotificationsRouter } from './routes/notifications.js';
 import { createSessionMiddleware } from './middleware/session.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import type { SessionDb } from './db/index.js';
+import { createRateLimiter } from './middleware/rateLimit.js';
 
 export function createApp(cfg: AppConfig, sessionDb: SessionDb): express.Express {
   const app = express();
@@ -20,6 +21,7 @@ export function createApp(cfg: AppConfig, sessionDb: SessionDb): express.Express
   app.use(createSessionMiddleware(cfg));
 
   app.use('/api', createHealthRouter(cfg, () => sessionDb.activeCount()));
+  app.use('/api/auth/login', createRateLimiter(cfg.loginRateLimitPerMinute));
   app.use('/api/auth', createAuthRouter(sessionDb));
   app.use('/api/courts', createCourtsRouter(cfg));
   app.use('/api/bookings', createBookingsRouter(sessionDb));

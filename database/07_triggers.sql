@@ -41,7 +41,7 @@ BEGIN
     SET NOCOUNT ON;
 
     INSERT INTO dbo.ActivityLogs (UserId, BookingId, Action, OldStatus, NewStatus)
-    SELECT i.UserId, i.BookingId,
+    SELECT COALESCE(TRY_CONVERT(UNIQUEIDENTIFIER, SESSION_CONTEXT(N'UserId')), i.UserId), i.BookingId,
            CASE
                WHEN d.Status = N'PENDING'  AND i.Status = N'BOOKED'    THEN N'APPROVE'
                WHEN d.Status = N'PENDING'  AND i.Status = N'REJECTED'  THEN N'REJECT'

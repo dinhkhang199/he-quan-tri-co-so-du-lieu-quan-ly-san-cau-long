@@ -74,10 +74,12 @@ const SQL_ERROR_MAP: Record<number, string> = {
   51060: 'Chưa đăng nhập: phải gọi sp_Login trước (SESSION_CONTEXT rỗng) hoặc UserId không khớp.',
   51061: 'Phiên đăng nhập chưa được thiết lập hoặc UserId không khớp.',
   1205: 'Xung đột deadlock (1205). Vui lòng thử lại sau.',
+  1222: 'Hệ thống đang bận vì chờ khóa quá lâu. Vui lòng thử lại.',
 };
 
 /** Peek the TECHNICAL error number out of an unknown mssql error. */
 function errNumber(err: unknown): number | null {
+  if (err === null || (typeof err !== 'object' && typeof err !== 'function')) return null;
   const e = err as Partial<RequestError>;
   if (typeof e.number === 'number') return e.number;
   if (typeof e.code === 'number') return e.code;

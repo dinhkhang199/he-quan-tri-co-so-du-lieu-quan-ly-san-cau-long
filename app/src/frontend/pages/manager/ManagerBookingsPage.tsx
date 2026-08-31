@@ -116,16 +116,69 @@ function displayTime(iso: Date | string): string {
 /* CSDL Demo drawer (static, read-only educational panel)                     */
 /* -------------------------------------------------------------------------- */
 
-type DemoTab = 'approve' | 'deadlock' | 'phantom';
+type DemoTab = 'lost' | 'dirty' | 'nonrepeatable' | 'phantom' | 'deadlock' | 'approve';
 
 const DEMO_TABS: { id: DemoTab; label: string }[] = [
-  { id: 'approve', label: 'Approve cạnh tranh' },
-  { id: 'deadlock', label: 'Deadlock' },
+  { id: 'lost', label: 'Lost Update' },
+  { id: 'dirty', label: 'Dirty Read' },
+  { id: 'nonrepeatable', label: 'Non-repeatable Read' },
   { id: 'phantom', label: 'Phantom Read' },
+  { id: 'deadlock', label: 'Deadlock' },
+  { id: 'approve', label: 'Approve cạnh tranh' },
 ];
 
+const ANOMALY: Partial<Record<DemoTab, {
+  nature: string; userView: string; sessionA: string; sessionB: string;
+  unsafe: string; wait: string; result: string; fixed: string; evidence: string;
+}>> = {
+  lost: {
+    nature: 'Hai giao dịch đọc cùng giá trị rồi lần lượt ghi đè; cập nhật của giao dịch trước bị mất.',
+    userView: 'Hai quản lý cùng sửa giá sân nhưng chỉ còn thay đổi của người ghi sau.',
+    sessionA: 'Đọc giá ban đầu, WAITFOR, rồi UPDATE theo giá đã đọc.',
+    sessionB: 'Đọc cùng giá ban đầu và UPDATE trước khi A ghi.',
+    unsafe: 'READ COMMITTED với mô hình read–compute–write không khóa từ lúc đọc.',
+    wait: 'WAITFOR DELAY nằm giữa SELECT và UPDATE để mở cửa sổ tương tranh.',
+    result: 'UNSAFE: một cập nhật biến mất.',
+    fixed: 'FIXED: UPDLOCK/HOLDLOCK giữ khóa từ lúc đọc đến COMMIT, nên cập nhật được tuần tự hóa.',
+    evidence: 'tests/concurrency/lost_update_session_A.sql + lost_update_session_B.sql',
+  },
+  dirty: {
+    nature: 'Session B đọc dữ liệu A chưa COMMIT và dữ liệu đó có thể bị ROLLBACK.',
+    userView: 'Người dùng thấy giá/trạng thái tạm thời chưa từng trở thành dữ liệu hợp lệ.',
+    sessionA: 'BEGIN TRAN, UPDATE, WAITFOR, sau đó ROLLBACK.',
+    sessionB: 'Đọc trong lúc A đang giữ thay đổi chưa commit.',
+    unsafe: 'READ UNCOMMITTED / NOLOCK cho phép đọc bẩn.',
+    wait: 'WAITFOR DELAY nằm sau UPDATE chưa commit của A.',
+    result: 'UNSAFE: B thấy giá trị rồi biến mất sau rollback.',
+    fixed: 'FIXED: READ COMMITTED chờ A kết thúc và chỉ đọc dữ liệu đã commit.',
+    evidence: 'tests/concurrency/dirty_read_session_A.sql + dirty_read_session_B.sql',
+  },
+  nonrepeatable: {
+    nature: 'Cùng một hàng được đọc hai lần trong một transaction nhưng cho hai kết quả.',
+    userView: 'Một màn hình nghiệp vụ thấy giá/trạng thái đổi ngay giữa thao tác.',
+    sessionA: 'SELECT lần 1, WAITFOR, SELECT lại cùng hàng.',
+    sessionB: 'UPDATE và COMMIT giữa hai lần đọc của A.',
+    unsafe: 'READ COMMITTED nhả shared lock sau mỗi câu lệnh.',
+    wait: 'WAITFOR DELAY nằm giữa hai SELECT của A.',
+    result: 'UNSAFE: hai lần đọc khác nhau.',
+    fixed: 'FIXED: REPEATABLE READ giữ shared lock đến COMMIT; B phải chờ.',
+    evidence: 'tests/concurrency/nonrepeatable_session_A.sql + nonrepeatable_session_B.sql',
+  },
+  phantom: {
+    nature: 'Hai lần chạy cùng predicate trả về tập hàng khác nhau vì có hàng mới được chèn.',
+    userView: 'Số booking trong cùng bộ lọc thay đổi giữa một thao tác báo cáo.',
+    sessionA: 'COUNT theo predicate, WAITFOR, rồi COUNT lại.',
+    sessionB: 'INSERT hàng khớp predicate và COMMIT giữa hai lần đọc.',
+    unsafe: 'READ COMMITTED không giữ range lock cho predicate.',
+    wait: 'WAITFOR DELAY nằm giữa hai truy vấn predicate của A.',
+    result: 'UNSAFE: lần đọc sau xuất hiện phantom row.',
+    fixed: 'FIXED: SERIALIZABLE giữ key-range lock; INSERT của B block đến khi A COMMIT.',
+    evidence: 'tests/concurrency/phantom_session_A.sql + phantom_session_B.sql',
+  },
+};
+
 function DemoDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const [tab, setTab] = useState<DemoTab>('approve');
+  const [tab, setTab] = useState<DemoTab>('lost');
 
   if (!open) return null;
 
@@ -159,45 +212,17 @@ function DemoDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
         </div>
 
         <div className="bp-demo__terminal" role="tabpanel">
-          {tab === 'approve' ? (
+          {ANOMALY[tab] ? (
             <>
-              <p className="bp-demo__comment">
-                -- Kịch bản minh họa (DB Demo): hai session cùng duyệt 2 booking PENDING
-              </p>
-              <p className="bp-demo__comment">
-                -- chồng thời gian trên cùng một sân. Chứng cứ thật: database/11-12 (CC-01).
-              </p>
-
-              <div className="bp-demo__session-a">&gt; Session A</div>
-              <div className="bp-demo__block">
-                BEGIN TRAN; SELECT * FROM Bookings WITH (UPDLOCK) WHERE BookingId = '&lt;Booking A&gt;';
-                <div className="bp-demo__comment">-- Booking A: cùng sân, khung giờ đầu — PENDING</div>
-              </div>
-
-              <div className="bp-demo__session-b">&gt; Session B</div>
-              <div className="bp-demo__block">
-                BEGIN TRAN; SELECT * FROM Bookings WITH (UPDLOCK) WHERE BookingId = '&lt;Booking B&gt;';
-                <div className="bp-demo__comment">-- Booking B: cùng sân, khung giờ chồng — PENDING</div>
-                <div className="bp-demo__warn">-- Blocked! Chờ Session A nhả khóa trên tài nguyên sân...</div>
-              </div>
-
-              <div className="bp-demo__session-a">&gt; Session A</div>
-              <div className="bp-demo__block">
-                UPDATE Bookings SET Status = 'BOOKED'; COMMIT TRAN;
-                <div className="bp-demo__ok">-- Thành công: Booking A đã chuyển sang BOOKED.</div>
-              </div>
-
-              <div className="bp-demo__session-b">&gt; Session B — tiếp tục</div>
-              <div className="bp-demo__block">
-                <div className="bp-demo__comment">-- Kiểm tra lại chồng thời gian (sp_ApproveBooking / trigger)...</div>
-                <div className="bp-demo__err">-- Xung đột: sân đã có BOOKED trong khung giờ này.</div>
-                <div className="bp-demo__err">-- Vi phạm nghiệp vụ -&gt; ROLLBACK</div>
-                ROLLBACK TRAN;
-              </div>
-
-              <p className="bp-demo__note">
-                Trong ứng dụng thật, lỗi chồng thời gian trả về HTTP 409 — modal giữ nguyên và yêu cầu chọn lại.
-              </p>
+              <div className="bp-demo__sub">A. Bản chất</div><p>{ANOMALY[tab]!.nature}</p>
+              <div className="bp-demo__sub">B. Góc nhìn người dùng</div><p>{ANOMALY[tab]!.userView}</p>
+              <div className="bp-demo__session-a">C. Session A</div><div className="bp-demo__block">{ANOMALY[tab]!.sessionA}</div>
+              <div className="bp-demo__session-b">D. Session B</div><div className="bp-demo__block">{ANOMALY[tab]!.sessionB}</div>
+              <div className="bp-demo__sub">E–G. UNSAFE / WAITFOR / Kết quả</div>
+              <p>{ANOMALY[tab]!.unsafe}</p><p className="bp-demo__warn">{ANOMALY[tab]!.wait}</p>
+              <p className="bp-demo__err">{ANOMALY[tab]!.result}</p>
+              <div className="bp-demo__sub">H–I. FIXED / isolation &amp; lock</div><p className="bp-demo__ok">{ANOMALY[tab]!.fixed}</p>
+              <div className="bp-demo__sub">J. Script evidence thật</div><p className="bp-demo__note">{ANOMALY[tab]!.evidence}</p>
             </>
           ) : null}
 
@@ -210,8 +235,8 @@ function DemoDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
                 -- Chứng cứ thật: database/13-14 (SQL Server Error 1205, deadlock victim).
               </p>
 
-              <div className="bp-demo__step">1. Session A giữ Lock trên Booking_1, chờ Lock trên Booking_2.</div>
-              <div className="bp-demo__step">2. Session B giữ Lock trên Booking_2, chờ Lock trên Booking_1.</div>
+              <div className="bp-demo__step">1. Session A khóa Courts C1 trước, rồi chờ Bookings b1.</div>
+              <div className="bp-demo__step">2. Session B khóa Bookings b1 trước, rồi chờ Courts C1.</div>
 
               <div className="bp-demo__cycle">
                 <span className="bp-demo__node bp-demo__node--a">A</span>
@@ -233,44 +258,20 @@ function DemoDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
               </div>
 
               <p className="bp-demo__note">
-                Trong ứng dụng thật, Error 1205 được ánh xạ sang HTTP 409 và người dùng thử lại thủ công — không tự
-                động chạy lại lệnh.
+                FIXED trong database/13–14: cả hai session dùng lock ordering nhất quán Court → Booking. Error 1205
+                được ánh xạ HTTP 409 để người dùng retry/reload thủ công.
               </p>
             </>
           ) : null}
 
-          {tab === 'phantom' ? (
+          {tab === 'approve' ? (
             <>
-              <p className="bp-demo__comment">
-                -- Kịch bản minh họa (DB Demo): Phantom Read ở hai mức cô lập.
-              </p>
-              <p className="bp-demo__comment">
-                -- Chứng cứ thật: database/10 (PH-01, PH-02) và tests/concurrency/phantom_session_*.
-              </p>
-
-              <div className="bp-demo__sub">READ COMMITTED (mặc định)</div>
-              <div className="bp-demo__block">
-                <span className="bp-demo__session-a">A:</span> SELECT COUNT(*) FROM Bookings WHERE date = '...'
-                <span className="bp-demo__ok"> -&gt; 2 rows</span>
-                <br />
-                <span className="bp-demo__session-b">B:</span> INSERT INTO Bookings ... ; COMMIT;
-                <br />
-                <span className="bp-demo__session-a">A:</span> SELECT COUNT(*) FROM Bookings WHERE date = '...'
-                <span className="bp-demo__err"> -&gt; 3 rows (Phantom!)</span>
-              </div>
-
-              <div className="bp-demo__sub">SERIALIZABLE</div>
-              <div className="bp-demo__block">
-                <span className="bp-demo__session-a">A:</span> SELECT COUNT(*) FROM Bookings WHERE date = '...'
-                <span className="bp-demo__ok"> -&gt; 2 rows</span>
-                <br />
-                <span className="bp-demo__session-b">B:</span> INSERT INTO Bookings ...
-                <span className="bp-demo__warn"> -- Blocked! (Range lock của Session A)</span>
-                <br />
-                <span className="bp-demo__session-a">A:</span> COMMIT;
-                <br />
-                <span className="bp-demo__session-b">B:</span> -- Tiếp tục và hoàn tất.
-              </div>
+              <p className="bp-demo__comment">-- database/11–12 CC-01: hai PENDING overlap cùng Court/time.</p>
+              <div className="bp-demo__session-a">Session A</div><div className="bp-demo__block">sp_ApproveBooking(b4)</div>
+              <div className="bp-demo__session-b">Session B</div><div className="bp-demo__block">sp_ApproveBooking(b9)</div>
+              <p>Production lock order: khóa Courts C1 bằng UPDLOCK/HOLDLOCK trước, rồi khóa Booking mục tiêu.</p>
+              <p className="bp-demo__ok">Sau khi session thắng chuyển BOOKED, session còn lại re-check overlap và bị từ chối. Kết quả: tối đa 1 BOOKED.</p>
+              <p className="bp-demo__note">Evidence: database/11_tests_concurrency_session_A.sql + database/12_tests_concurrency_session_B.sql</p>
             </>
           ) : null}
         </div>

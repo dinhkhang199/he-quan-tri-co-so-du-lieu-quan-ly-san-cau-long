@@ -22,8 +22,9 @@
 import sql from 'mssql';
 import type { AppConfig } from '../config.js';
 import { buildSqlConfig } from './connection.js';
+import { expiredSessionIds, isSessionExpired, touchSession, type SessionTimestamps } from './sessionExpiry.js';
 
-interface SessionConnection {
+interface SessionConnection extends SessionTimestamps {
   conn: sql.ConnectionPool;
   /** Promise chain that serializes work on this connection. */
   queue: Promise<unknown>;
@@ -37,9 +38,30 @@ export interface SessionContextValues {
 export class SessionDb {
   private readonly sessions = new Map<string, SessionConnection>();
   private readonly cfg: AppConfig;
+  private reaper: NodeJS.Timeout | null = null;
 
   constructor(cfg: AppConfig) {
     this.cfg = cfg;
+  }
+
+  async sweepExpiredSessions(now = Date.now()): Promise<number> {
+    const ids = expiredSessionIds(this.sessions, {
+      ttlMs: this.cfg.sessionTtlMs,
+      idleTimeoutMs: this.cfg.sessionIdleTimeoutMs,
+    }, now);
+    await Promise.all(ids.map((id) => this.closeSession(id)));
+    return ids.length;
+  }
+
+  startReaper(): void {
+    if (this.reaper) return;
+    this.reaper = setInterval(() => void this.sweepExpiredSessions(), this.cfg.sessionSweepIntervalMs);
+    this.reaper.unref();
+  }
+
+  stopReaper(): void {
+    if (this.reaper) clearInterval(this.reaper);
+    this.reaper = null;
   }
 
   /**
@@ -60,7 +82,8 @@ export class SessionDb {
     const conn = new sql.ConnectionPool(connConfig);
     await conn.connect();
 
-    const holder: SessionConnection = { conn, queue: Promise.resolve() };
+    const now = Date.now();
+    const holder: SessionConnection = { conn, queue: Promise.resolve(), createdAt: now, lastUsedAt: now };
     this.sessions.set(sessionId, holder);
 
     try {
@@ -79,9 +102,17 @@ export class SessionDb {
    */
   async withExistingConnection<T>(sessionId: string, fn: (conn: sql.ConnectionPool) => Promise<T>): Promise<T> {
     const holder = this.sessions.get(sessionId);
+    if (holder && isSessionExpired(holder, {
+      ttlMs: this.cfg.sessionTtlMs,
+      idleTimeoutMs: this.cfg.sessionIdleTimeoutMs,
+    })) {
+      await this.closeSession(sessionId);
+      throw new Error('No active SQL session connection');
+    }
     if (!holder || !holder.conn.connected) {
       throw new Error('No active SQL session connection');
     }
+    touchSession(holder);
     const run = holder.queue.then(() => fn(holder.conn));
     holder.queue = run.catch(() => undefined);
     return run;
@@ -167,6 +198,7 @@ export class SessionDb {
 
   /** Close every session connection (server shutdown). */
   async closeAll(): Promise<void> {
+    this.stopReaper();
     const ids = [...this.sessions.keys()];
     await Promise.all(ids.map((id) => this.closeSession(id)));
   }

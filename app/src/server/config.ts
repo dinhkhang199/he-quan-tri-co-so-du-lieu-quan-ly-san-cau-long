@@ -13,6 +13,10 @@ export interface AppConfig {
   dbPoolMax: number;
   dbConnectTimeoutMs: number;
   sessionSecret: string;
+  sessionTtlMs: number;
+  sessionIdleTimeoutMs: number;
+  sessionSweepIntervalMs: number;
+  loginRateLimitPerMinute: number;
   port: number;
   isProd: boolean;
 }
@@ -36,6 +40,10 @@ export function loadConfig(): AppConfig {
     dbPoolMax: Number(process.env.DB_CONNECTION_POOL_MAX ?? 10),
     dbConnectTimeoutMs: Number(process.env.DB_CONNECT_TIMEOUT_MS ?? 5000),
     sessionSecret: required('SESSION_SECRET'),
+    sessionTtlMs: Number(process.env.SESSION_TTL_MS ?? 1000 * 60 * 60 * 8),
+    sessionIdleTimeoutMs: Number(process.env.SESSION_IDLE_TIMEOUT_MS ?? 1000 * 60 * 30),
+    sessionSweepIntervalMs: Number(process.env.SESSION_SWEEP_INTERVAL_MS ?? 1000 * 60),
+    loginRateLimitPerMinute: Number(process.env.LOGIN_RATE_LIMIT_PER_MINUTE ?? 60),
     port: Number(process.env.APP_PORT ?? 3000),
     isProd: process.env.NODE_ENV === 'production',
   };

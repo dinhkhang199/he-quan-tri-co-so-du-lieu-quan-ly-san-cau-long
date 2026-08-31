@@ -11,9 +11,11 @@
     "dev": "concurrently -k -n server,client -c cyan,magenta \"npm:dev:server\" \"npm:dev:client\"",
     "dev:server": "tsx watch src/server/index.ts",
     "dev:client": "vite",
-    "build": "tsc -p tsconfig.server.json --noEmit && tsc -p tsconfig.client.json --noEmit && vite build",
+    "build": "npm run build:server && tsc -p tsconfig.client.json --noEmit && vite build",
+    "build:server": "tsc -p tsconfig.server.json",
     "typecheck": "tsc -p tsconfig.server.json --noEmit && tsc -p tsconfig.client.json --noEmit",
     "lint": "eslint . --max-warnings=0",
+    "test": "node --import tsx --test tests/*.test.ts",
     "start": "node dist/server/index.js",
     "preview": "vite preview"
   },

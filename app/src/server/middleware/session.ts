@@ -18,8 +18,8 @@ export function createSessionMiddleware(cfg: AppConfig) {
     cookie: {
       httpOnly: true,
       sameSite: 'lax',
-      secure: false, // local dev over http; enable behind TLS in production
-      maxAge: 1000 * 60 * 60 * 8, // 8h
+      secure: cfg.isProd,
+      maxAge: cfg.sessionTtlMs,
     },
   });
 }

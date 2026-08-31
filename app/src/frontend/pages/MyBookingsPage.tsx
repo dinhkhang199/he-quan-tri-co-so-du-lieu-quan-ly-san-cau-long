@@ -12,6 +12,7 @@ import { useAuth } from '../auth/AuthContext';
 import { BOOKING_STATUS } from '../../shared/contract';
 import type { BookingStatus } from '../../shared/contract';
 import type { MyBooking } from '../../shared/types';
+import { hoursUntilVietnamWallClock } from '../../shared/time';
 
 /**
  * Customer booking history + cancellation (Phase 2.5) — locked
@@ -26,7 +27,7 @@ import type { MyBooking } from '../../shared/types';
  *
  * StartTime/EndTime arrive as ISO strings carrying the local wall-clock digits
  * (the SQL DATETIME2 stored the wall clock verbatim). Display by string-slicing;
- * the 3h check compares UTC instants, so no wall-clock shift can occur.
+ * the 3h hint explicitly interprets those digits in Asia/Ho_Chi_Minh.
  */
 
 type FilterStatus = 'ALL' | BookingStatus;
@@ -50,14 +51,10 @@ function displayTime(iso: Date | string): string {
 }
 
 /** Whole hours from now until the start wall clock (instants → tz-safe). */
-function hoursUntilStart(iso: Date | string): number {
-  return (new Date(wallClockString(iso)).getTime() - Date.now()) / 3_600_000;
-}
-
 /** UX-only eligibility hint; sp_CancelBooking makes the final decision. */
 function mayShowCancel(booking: MyBooking): boolean {
   if (booking.Status === 'PENDING') return true;
-  if (booking.Status === 'BOOKED') return hoursUntilStart(booking.StartTime) >= 3;
+  if (booking.Status === 'BOOKED') return hoursUntilVietnamWallClock(booking.StartTime) >= 3;
   return false;
 }
 

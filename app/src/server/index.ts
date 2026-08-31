@@ -7,6 +7,7 @@ import { closeSharedPool } from './db/pool.js';
 async function main(): Promise<void> {
   const cfg = loadConfig();
   const sessionDb = new SessionDb(cfg);
+  sessionDb.startReaper();
   const app = createApp(cfg, sessionDb);
 
   const server = app.listen(cfg.port, () => {
