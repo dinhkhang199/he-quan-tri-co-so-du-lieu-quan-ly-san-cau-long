@@ -271,6 +271,16 @@ export function createAuthRouter(cfg: AppConfig, sessionDb: SessionDb): Router {
       res.json({ message: 'Đổi mật khẩu thành công. Bạn có thể đăng nhập bằng mật khẩu mới.' });
     } catch (err) {
       const mapped = mapSqlError(err);
+      if (mapped.code === 50210 || mapped.code === 50211 || mapped.code === 50212) {
+        console.error(`[auth] reset password rejected (code=${mapped.code}): ${mapped.message}`);
+        res.status(400).json({
+          error: {
+            code: null,
+            message: 'Mã khôi phục hoặc thông tin tài khoản không hợp lệ.',
+          },
+        });
+        return;
+      }
       res.status(mapped.code === null ? 500 : 400).json({ error: serializeError(mapped) });
     }
   });
