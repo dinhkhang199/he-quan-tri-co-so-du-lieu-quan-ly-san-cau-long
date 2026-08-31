@@ -197,20 +197,38 @@ export function createAuthRouter(cfg: AppConfig, sessionDb: SessionDb): Router {
         }
       }
 
-      res.json({
+      const baseResponse = {
         message: 'Nếu thông tin khớp, mã khôi phục đã được gửi qua email và có hiệu lực trong 10 phút.',
         expiresInSeconds: 600,
+      };
+
+      if (cfg.isProd) {
+        res.json(baseResponse);
+        return;
+      }
+
+      res.json({
+        ...baseResponse,
+        matched: true,
         emailMasked: row ? maskEmail(row.Email) : undefined,
-        ...(cfg.isProd || !row ? {} : { developmentCode: row.ResetCode, matched: true, emailSent }),
+        emailSent,
+        ...(row?.ResetCode ? { developmentCode: row.ResetCode } : {}),
       });
     } catch (err) {
       const mapped = mapSqlError(err);
-      // Account enumeration protection: return generic 200 message on unknown user
+      // Account enumeration protection: return identical generic message on unknown user
       if (mapped.code === 50210) {
-        res.json({
+        const baseResponse = {
           message: 'Nếu thông tin khớp, mã khôi phục đã được gửi qua email và có hiệu lực trong 10 phút.',
           expiresInSeconds: 600,
-          ...(cfg.isProd ? {} : { matched: false }),
+        };
+        if (cfg.isProd) {
+          res.json(baseResponse);
+          return;
+        }
+        res.json({
+          ...baseResponse,
+          matched: false,
         });
         return;
       }

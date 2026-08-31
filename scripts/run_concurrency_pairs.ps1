@@ -55,3 +55,29 @@ Write-Host "
 ========================================================"
 Write-Host ">>> ALL CONCURRENCY PAIRS COMPLETED!"
 Write-Host "========================================================"
+
+Write-Host "
+>>> CLEANING UP ALL HELPER SYNC TABLES..."
+$cleanupSql = @"
+USE [$DbName];
+DROP TABLE IF EXISTS dbo._CCTestSync;
+DROP TABLE IF EXISTS dbo._DLTestSync;
+DROP TABLE IF EXISTS dbo._LUTestSync;
+DROP TABLE IF EXISTS dbo._DRTestSync;
+DROP TABLE IF EXISTS dbo._NRTestSync;
+DROP TABLE IF EXISTS dbo._PhTestSync;
+"@
+sqlcmd -S $Server -Q $cleanupSql
+
+Write-Host "
+>>> POST-CONCURRENCY OBJECT COUNTS:"
+$checkSql = @"
+USE [$DbName];
+SET NOCOUNT ON;
+SELECT 'Tables' AS ObjectType, COUNT(*) AS [Count] FROM sys.tables WHERE is_ms_shipped = 0
+UNION ALL SELECT 'Views', COUNT(*) FROM sys.views WHERE is_ms_shipped = 0
+UNION ALL SELECT 'Functions', COUNT(*) FROM sys.objects WHERE type IN ('FN', 'IF', 'TF') AND is_ms_shipped = 0
+UNION ALL SELECT 'Stored Procedures', COUNT(*) FROM sys.procedures WHERE is_ms_shipped = 0
+UNION ALL SELECT 'Triggers', COUNT(*) FROM sys.triggers WHERE is_ms_shipped = 0;
+"@
+sqlcmd -S $Server -f 65001 -W -Q $checkSql
