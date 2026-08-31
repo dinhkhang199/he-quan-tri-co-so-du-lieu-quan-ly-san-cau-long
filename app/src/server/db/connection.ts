@@ -6,7 +6,7 @@ import type { config as MssqlConfig } from 'mssql';
 import type { AppConfig } from '../config.js';
 
 export function buildSqlConfig(cfg: AppConfig): MssqlConfig {
-  return {
+  const config: MssqlConfig = {
     server: cfg.dbServer,
     database: cfg.dbDatabase,
     user: cfg.dbUser,
@@ -22,4 +22,6 @@ export function buildSqlConfig(cfg: AppConfig): MssqlConfig {
       idleTimeoutMillis: 30000,
     },
   };
+  if (cfg.dbPort !== null) config.port = cfg.dbPort;
+  return config;
 }

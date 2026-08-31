@@ -1,0 +1,5 @@
+Changed database context to 'BadmintonCourtManagement_FinalTest'.
+ KẾT LUẬN UNSAFE: Final = 150000
+ KẾT LUẬN FIXED: Final = 170000
+Changed database context to 'BadmintonCourtManagement_FinalTest'.
+ FIXED: Ghi xong → Final = 170.000 (không lost update).

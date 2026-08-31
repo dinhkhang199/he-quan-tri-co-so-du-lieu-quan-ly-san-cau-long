@@ -2,6 +2,15 @@ import type { NextFunction, Request, Response } from 'express';
 
 export function createRateLimiter(limit: number, windowMs = 60_000) {
   const hits = new Map<string, number[]>();
+  const cleanup = setInterval(() => {
+    const cutoff = Date.now() - windowMs;
+    for (const [key, stamps] of hits) {
+      const recent = stamps.filter((stamp) => stamp > cutoff);
+      if (recent.length === 0) hits.delete(key);
+      else hits.set(key, recent);
+    }
+  }, windowMs);
+  cleanup.unref();
   return (req: Request, res: Response, next: NextFunction): void => {
     if (limit <= 0) return next();
     const now = Date.now();

@@ -6,6 +6,7 @@
 
 export interface AppConfig {
   dbServer: string;
+  dbPort: number | null;
   dbDatabase: string;
   dbUser: string;
   dbPassword: string;
@@ -19,6 +20,7 @@ export interface AppConfig {
   loginRateLimitPerMinute: number;
   port: number;
   isProd: boolean;
+  serveClient: boolean;
 }
 
 /** Read one env value with a required check (config template prohibits committed secrets). */
@@ -33,6 +35,7 @@ function required(name: string): string {
 export function loadConfig(): AppConfig {
   return {
     dbServer: process.env.DB_SERVER ?? 'localhost\\SQLEXPRESS',
+    dbPort: process.env.DB_PORT ? Number(process.env.DB_PORT) : null,
     dbDatabase: process.env.DB_DATABASE ?? 'BadmintonCourtManagement',
     dbUser: required('DB_USER'),
     dbPassword: required('DB_PASSWORD'),
@@ -46,5 +49,6 @@ export function loadConfig(): AppConfig {
     loginRateLimitPerMinute: Number(process.env.LOGIN_RATE_LIMIT_PER_MINUTE ?? 60),
     port: Number(process.env.APP_PORT ?? 3000),
     isProd: process.env.NODE_ENV === 'production',
+    serveClient: process.argv.includes('--serve-client'),
   };
 }

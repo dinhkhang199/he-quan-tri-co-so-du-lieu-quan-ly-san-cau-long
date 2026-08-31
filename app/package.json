@@ -16,7 +16,7 @@
     "typecheck": "tsc -p tsconfig.server.json --noEmit && tsc -p tsconfig.client.json --noEmit",
     "lint": "eslint . --max-warnings=0",
     "test": "node --import tsx --test tests/*.test.ts",
-    "start": "node dist/server/index.js",
+    "start": "node dist/server/index.js --serve-client",
     "preview": "vite preview"
   },
   "dependencies": {

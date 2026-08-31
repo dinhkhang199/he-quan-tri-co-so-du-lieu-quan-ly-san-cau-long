@@ -1,0 +1,8 @@
+{
+  "status": "ok",
+  "service": "badmintoncourtmanagement-app",
+  "phase": "2.12",
+  "db": "unreachable",
+  "activeSessionConnections": 0,
+  "time": "2026-08-31T15:01:10.45Z"
+}

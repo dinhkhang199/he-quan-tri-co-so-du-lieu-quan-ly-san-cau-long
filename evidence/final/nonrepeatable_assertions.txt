@@ -1,0 +1,7 @@
+Changed database context to 'BadmintonCourtManagement_FinalTest'.
+ >>> CÙNG 1 dòng C5, 2 lần đọc KHÁC nhau (100000 → 120000) → NON-REPEATABLE READ.
+ FIXED lần đọc 1 (giữ S-lock C5 tới hết tran): 100000
+ FIXED lần đọc 2: 100000
+ >>> Khóa chia sẻ giữ tới hết tran → 2 lần đọc GIỐNG nhau → NON-REPEATABLE READ bị ngăn.
+Changed database context to 'BadmintonCourtManagement_FinalTest'.
+ Hết block → C5 = 120.000 đã commit KHÔNG thay đổi trong lúc A đang đọc → NON-REPEATABLE READ bị ngăn.

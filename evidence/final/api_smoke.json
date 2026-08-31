@@ -1,0 +1,13 @@
+{
+  "wrong": 401,
+  "inactive": 403,
+  "guestCourts": 5,
+  "unauthBooking": 401,
+  "customerLogin": 200,
+  "create": 201,
+  "createdStatus": "PENDING",
+  "historyContains": true,
+  "managerLogin": 200,
+  "approve": 200,
+  "dashboard": true
+}

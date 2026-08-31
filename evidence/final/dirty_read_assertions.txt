@@ -1,0 +1,12 @@
+Changed database context to 'BadmintonCourtManagement_FinalTest'.
+ Đã UPDATE PricePerHour = 200.000 (CHƯA COMMIT). Cờ đã báo → B sẽ đọc được giá dirty này.
+ Đã ROLLBACK: giá 200.000 chưa từng tồn tại thật, nay biến mất → đó là DIRTY READ.
+FinalPrice_C5 
+ B đang bị khóa (không đọc được 200.000). Mình ROLLBACK để nhả block cho B đọc giá đã commit.
+ >>> B đọc được giá ĐÃ COMMIT (100.000) chứ không phải 200.000 dirty → DIRTY READ bị ngăn.
+Changed database context to 'BadmintonCourtManagement_FinalTest'.
+ Đọc được PricePerHour = 200000 — DÙ A CHƯA COMMIT.
+ Nếu đọc được 200.000 mà A sau đó rollback → DIRTY READ (đọc dữ liệu chưa commit).
+ SELECT (READ COMMITTED) → nếu A còn giữ UPDATE chưa commit, lệnh này BỊ BLOCK tới khi A kết thúc tran, không đọc được 200.000 dirty.
+ Hết block. Giá đọc được (đã commit) = 100000.
+ Không đọc được 200.000 chưa commit → DIRTY READ bị ngăn (READ COMMITTED mặc định).

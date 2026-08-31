@@ -1,0 +1,2 @@
+[auth] request failed (code=50001): RequestError: Đăng nhập thất bại: sai tên đăng nhập hoặc mật khẩu.
+[auth] request failed (code=50002): RequestError: Đăng nhập thất bại: tài khoản đã bị vô hiệu hóa (inactive).

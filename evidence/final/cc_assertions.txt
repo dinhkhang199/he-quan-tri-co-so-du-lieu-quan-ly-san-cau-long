@@ -1,0 +1,7 @@
+BookedCount_on_slot
+ ASSERTION PASS: BookedCount_on_slot <= 1 (không tạo 2 BOOKED overlap).
+FinalPrice_C5 
+ ASSERTION PASS: giá cuối = 120000 (UPDATE của B không bị lost).
+--- Hết 11_tests_concurrency_session_A.sql. Xem assertion PASS/FAIL ở trên. ---
+ ASSERTION PASS: tối đa 1 trong (b4,b9) BOOKED.
+ ASSERTION (xem Window A): giá cuối khi A đọc phải là 120000.

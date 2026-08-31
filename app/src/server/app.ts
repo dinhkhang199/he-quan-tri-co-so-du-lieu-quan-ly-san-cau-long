@@ -1,4 +1,5 @@
 import express from 'express';
+import { fileURLToPath } from 'node:url';
 import type { AppConfig } from './config.js';
 import { createHealthRouter } from './routes/health.js';
 import { createAuthRouter } from './routes/auth.js';
@@ -17,6 +18,7 @@ export function createApp(cfg: AppConfig, sessionDb: SessionDb): express.Express
   const app = express();
 
   app.disable('x-powered-by');
+  if (cfg.isProd) app.set('trust proxy', 1);
   app.use(express.json());
   app.use(createSessionMiddleware(cfg));
 
@@ -34,9 +36,16 @@ export function createApp(cfg: AppConfig, sessionDb: SessionDb): express.Express
     res.status(404).json({ error: { message: 'Không tìm thấy API endpoint này.' } });
   });
 
-  app.all('*', (_req, res) => {
-    res.status(404).json({ error: { message: 'Không tìm thấy tài nguyên này.' } });
-  });
+  if (cfg.serveClient) {
+    const clientDir = fileURLToPath(new URL('../client/', import.meta.url));
+    const clientIndex = fileURLToPath(new URL('../client/index.html', import.meta.url));
+    app.use(express.static(clientDir));
+    app.get('*', (_req, res) => res.sendFile(clientIndex));
+  } else {
+    app.all('*', (_req, res) => {
+      res.status(404).json({ error: { message: 'Không tìm thấy tài nguyên này.' } });
+    });
+  }
 
   app.use(errorHandler);
   return app;

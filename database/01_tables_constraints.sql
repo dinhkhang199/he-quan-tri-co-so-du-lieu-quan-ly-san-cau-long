@@ -22,7 +22,7 @@ CREATE TABLE dbo.Users
 (
     UserId       UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_Users_UserId DEFAULT NEWID(),
     Username     NVARCHAR(50)     NOT NULL,
-    PasswordHash VARBINARY(64)    NOT NULL,          -- chỉ lưu hash (SHA2_256 + salt), không bao giờ lưu plaintext
+    PasswordHash VARBINARY(64)    NOT NULL,          -- SHA2_256 với prefix namespace cố định; không phải per-user salt
     PhoneNumber  NVARCHAR(20)     NOT NULL,
     Role         NVARCHAR(20)     NOT NULL,
     IsActive     BIT              NOT NULL CONSTRAINT DF_Users_IsActive DEFAULT 1,

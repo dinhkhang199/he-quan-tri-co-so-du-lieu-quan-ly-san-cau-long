@@ -1,0 +1,9 @@
+ | 
+-|-
+Tables|5
+Views|4
+Functions|2
+Procedures|14
+Triggers|6
+
+(5 rows affected)

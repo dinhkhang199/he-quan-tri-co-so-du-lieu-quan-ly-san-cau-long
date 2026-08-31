@@ -1,0 +1,12 @@
+ Đã ghi Bookings b1 (không bị deadlock).
+ Transaction A commit thành công (deadlock không rơi vào A).
+ Kết luận DL-01: deadlock có victim (B) - A commit bình thường.
+ FIX: lock ordering nhất quán Court -> Booking.
+ >>> Commit thành công - KHÔNG deadlock với lock ordering nhất quán.
+ >>> 5 giây: chạy 14_deadlock_demo_session_B.sql (Window B) NGAY <<<
+ ASSERTION PASS: không deadlock - lock ordering Court->Booking thống nhất.
+ >>> VICTIM: bị deadlock (1205). Transaction bị ROLLBACK - đúng bản chất deadlock.
+ Kết luận DL-01: B là deadlock victim.
+ FIX: lock ordering nhất quán Court -> Booking.
+ >>> Commit thành công - KHÔNG deadlock với lock ordering nhất quán.
+ ASSERTION PASS: không deadlock; phép cancel thực hiện tuần tự sau approve.
