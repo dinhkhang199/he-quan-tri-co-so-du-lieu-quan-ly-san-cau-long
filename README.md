@@ -204,7 +204,13 @@ copy .env.example .env
 | `DB_TRUST_SERVER_CERTIFICATE` | Chấp nhận self-signed cert | `true` |
 | `DB_CONNECTION_POOL_MAX` | Số kết nối pool tối đa | `10` |
 | `DB_CONNECT_TIMEOUT_MS` | Timeout kết nối (ms) | `5000` |
+| `DB_LOCK_TIMEOUT_MS` | Timeout chờ khóa ở tầng app (ms) | `5000` |
+| `MAX_SESSION_CONNECTIONS` | Trần connection SQL dành riêng cho phiên đăng nhập | `200` |
+| `LOGIN_RATE_LIMIT_PER_MINUTE` | Trần đăng nhập mỗi IP/phút (`0` = tắt) | `60` |
 | `SESSION_SECRET` | Secret ký session cookie | **bắt buộc điền** |
+| `SESSION_TTL_MS` | TTL tuyệt đối dùng chung cho cookie và connection SQL | `28800000` (8 giờ) |
+| `SESSION_IDLE_TIMEOUT_MS` | Đóng connection SQL nếu phiên không hoạt động | `1800000` (30 phút) |
+| `SESSION_SWEEP_INTERVAL_MS` | Chu kỳ quét phiên hết hạn | `60000` (1 phút) |
 | `APP_PORT` | Cổng backend | `3000` |
 | `VITE_DEV_PORT` | Cổng Vite dev server | `5173` |
 
@@ -255,14 +261,15 @@ npm run dev:client   # Vite dev server trên port 5173, proxy /api → 3000
 ```bash
 npm run typecheck   # TypeScript check
 npm run lint        # ESLint
-npm run build       # Typecheck + Vite production build
+npm test            # 71 unit tests, không cần SQL Server
+npm run build       # Compile server + typecheck/build frontend
 ```
 
 ### Production build
 
 ```bash
 npm run build       # Output: app/dist/
-npm run start       # Chạy production (cần build trước)
+npm run start       # Chạy server + phục vụ SPA đã build (cần build trước)
 ```
 
 ---

@@ -12,7 +12,8 @@ USE BadmintonCourtManagement;
 GO
 
 -- ============================================================
--- 1. sp_Login: xác thực, chặn inactive, cập nhật LastLogin
+-- 1. sp_Login: xác thực + ba action public REGISTER / REQUEST_RESET /
+--    RESET_PASSWORD. Gom vào một SP để giữ đúng 14 SP của contract.
 --    Đồng thời thiết lập SESSION_CONTEXT để các SP khác dùng để kiểm
 --    tra actor (security contract section Q). App phải gọi sp_Login
 --    trước khi gọi bất kỳ SP nghiệp vụ nào khác.
@@ -21,12 +22,153 @@ IF OBJECT_ID(N'dbo.sp_Login', N'P') IS NOT NULL DROP PROCEDURE dbo.sp_Login;
 GO
 CREATE PROCEDURE dbo.sp_Login
     @Username NVARCHAR(50),
-    @Password NVARCHAR(200)
+    @Password NVARCHAR(200) = NULL,
+    @Action NVARCHAR(20) = N'LOGIN',
+    @PhoneNumber NVARCHAR(20) = NULL,
+    @Email NVARCHAR(254) = NULL,
+    @ResetCode NVARCHAR(20) = NULL
 WITH EXECUTE AS OWNER
 AS
 BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
+
+    SET @Action = UPPER(LTRIM(RTRIM(COALESCE(@Action, N''))));
+    SET @Username = LTRIM(RTRIM(COALESCE(@Username, N'')));
+    SET @PhoneNumber = LTRIM(RTRIM(COALESCE(@PhoneNumber, N'')));
+    SET @Email = LOWER(LTRIM(RTRIM(COALESCE(@Email, N''))));
+
+    -- Đăng ký luôn tạo CUSTOMER; client không được tự chọn Role/IsActive.
+    IF @Action = N'REGISTER'
+    BEGIN
+        IF LEN(@Username) < 3 OR LEN(@Username) > 50
+           -- Đặt dấu gạch ngang ở đầu character class để SQL LIKE hiểu là
+           -- ký tự thường, không diễn giải nhầm thành một khoảng ký tự.
+           OR @Username COLLATE Latin1_General_100_BIN2 LIKE N'%[^-A-Za-z0-9._]%'
+           OR LEN(@PhoneNumber) < 9 OR LEN(@PhoneNumber) > 15
+           OR @PhoneNumber LIKE N'%[^0-9]%'
+           OR (LEN(@Email) > 0 AND (LEN(@Email) < 5 OR LEN(@Email) > 254 OR @Email LIKE N'% %' OR @Email NOT LIKE N'%_@_%._%'))
+            THROW 50200, N'Thông tin đăng ký không hợp lệ.', 1;
+        IF @Password IS NULL OR LEN(@Password) < 8 OR LEN(@Password) > 72
+           OR @Password NOT LIKE N'%[A-Za-z]%' OR @Password NOT LIKE N'%[0-9]%'
+            THROW 50203, N'Mật khẩu phải dài 8–72 ký tự và có cả chữ lẫn số.', 1;
+
+        DECLARE @NewUserId UNIQUEIDENTIFIER = NEWID();
+        DECLARE @NewHash VARBINARY(64) = CONVERT(VARBINARY(64), HASHBYTES('SHA2_256', N'bcms|' + @Password));
+        BEGIN TRY
+            BEGIN TRAN;
+                IF EXISTS (SELECT 1 FROM dbo.Users WITH (UPDLOCK, HOLDLOCK) WHERE Username = @Username)
+                    THROW 50201, N'Tên đăng nhập đã được sử dụng.', 1;
+                IF EXISTS (SELECT 1 FROM dbo.Users WITH (UPDLOCK, HOLDLOCK) WHERE PhoneNumber = @PhoneNumber)
+                    THROW 50202, N'Số điện thoại đã được sử dụng.', 1;
+                IF LEN(@Email) > 0 AND EXISTS (SELECT 1 FROM dbo.Users WITH (UPDLOCK, HOLDLOCK) WHERE Email = @Email)
+                    THROW 50204, N'Email đã được sử dụng.', 1;
+
+                INSERT dbo.Users (UserId, Username, PasswordHash, PhoneNumber, Email, Role, IsActive)
+                VALUES (@NewUserId, @Username, @NewHash, @PhoneNumber, NULLIF(@Email, N''), N'CUSTOMER', 1);
+            COMMIT;
+        END TRY
+        BEGIN CATCH
+            IF XACT_STATE() <> 0 ROLLBACK;
+            THROW;
+        END CATCH;
+
+        SELECT UserId, Username, PhoneNumber, Email, Role, IsActive, CreatedAt
+        FROM dbo.Users WHERE UserId = @NewUserId;
+        RETURN;
+    END;
+
+    -- App xác minh username + email rồi tạo OTP 6 số. Phone chỉ còn là fallback
+    -- cho bộ regression SQL cũ. Chỉ hash được lưu; app gửi code thô qua email.
+    IF @Action = N'REQUEST_RESET'
+    BEGIN
+        DECLARE @ResetUserId UNIQUEIDENTIFIER;
+        SELECT @ResetUserId = UserId
+        FROM dbo.Users
+        WHERE Username = @Username
+          AND ((LEN(@Email) > 0 AND Email = @Email) OR (LEN(@Email) = 0 AND PhoneNumber = @PhoneNumber))
+          AND IsActive = 1;
+
+        IF @ResetUserId IS NULL
+            THROW 50210, N'Không tìm thấy tài khoản khớp thông tin khôi phục.', 1;
+
+        DECLARE @RandomValue BIGINT = ABS(CONVERT(BIGINT, CONVERT(INT, CRYPT_GEN_RANDOM(4))));
+        DECLARE @GeneratedCode NVARCHAR(6) = RIGHT(N'000000' + CONVERT(NVARCHAR(6), @RandomValue % 1000000), 6);
+        DECLARE @ResetExpiresAt DATETIME2(0) = DATEADD(MINUTE, 10, SYSDATETIME());
+
+        UPDATE dbo.Users
+        SET PasswordResetCodeHash = HASHBYTES('SHA2_256', N'bcms-reset|' + @GeneratedCode),
+            PasswordResetExpiresAt = @ResetExpiresAt,
+            PasswordResetAttempts = 0,
+            UpdatedAt = SYSDATETIME()
+        WHERE UserId = @ResetUserId;
+
+        SELECT @GeneratedCode AS ResetCode, @ResetExpiresAt AS ExpiresAt, Email
+        FROM dbo.Users WHERE UserId = @ResetUserId;
+        RETURN;
+    END;
+
+    IF @Action = N'RESET_PASSWORD'
+    BEGIN
+        IF @Password IS NULL OR LEN(@Password) < 8 OR LEN(@Password) > 72
+           OR @Password NOT LIKE N'%[A-Za-z]%' OR @Password NOT LIKE N'%[0-9]%'
+            THROW 50203, N'Mật khẩu phải dài 8–72 ký tự và có cả chữ lẫn số.', 1;
+        IF @ResetCode IS NULL OR @ResetCode LIKE N'%[^0-9]%' OR LEN(@ResetCode) <> 6
+            THROW 50212, N'Mã khôi phục không hợp lệ.', 1;
+
+        DECLARE @TargetUserId UNIQUEIDENTIFIER;
+        DECLARE @StoredResetHash VARBINARY(64);
+        DECLARE @StoredResetExpiry DATETIME2(0);
+        DECLARE @StoredResetAttempts TINYINT;
+
+        BEGIN TRY
+            BEGIN TRAN;
+                SELECT @TargetUserId = UserId,
+                       @StoredResetHash = PasswordResetCodeHash,
+                       @StoredResetExpiry = PasswordResetExpiresAt,
+                       @StoredResetAttempts = PasswordResetAttempts
+                FROM dbo.Users WITH (UPDLOCK, HOLDLOCK)
+                WHERE Username = @Username
+                  AND ((LEN(@Email) > 0 AND Email = @Email) OR (LEN(@Email) = 0 AND PhoneNumber = @PhoneNumber))
+                  AND IsActive = 1;
+
+                IF @TargetUserId IS NULL OR @StoredResetHash IS NULL
+                   OR @StoredResetExpiry <= SYSDATETIME() OR @StoredResetAttempts >= 5
+                    THROW 50211, N'Mã khôi phục đã hết hạn hoặc không còn hiệu lực.', 1;
+
+                IF @StoredResetHash <> HASHBYTES('SHA2_256', N'bcms-reset|' + @ResetCode)
+                BEGIN
+                    UPDATE dbo.Users
+                    SET PasswordResetAttempts = CASE WHEN PasswordResetAttempts < 5 THEN PasswordResetAttempts + 1 ELSE 5 END,
+                        UpdatedAt = SYSDATETIME()
+                    WHERE UserId = @TargetUserId;
+                    COMMIT;
+                    THROW 50212, N'Mã khôi phục không đúng.', 1;
+                END;
+
+                UPDATE dbo.Users
+                SET PasswordHash = HASHBYTES('SHA2_256', N'bcms|' + @Password),
+                    PasswordResetCodeHash = NULL,
+                    PasswordResetExpiresAt = NULL,
+                    PasswordResetAttempts = 0,
+                    UpdatedAt = SYSDATETIME()
+                WHERE UserId = @TargetUserId;
+            COMMIT;
+        END TRY
+        BEGIN CATCH
+            IF XACT_STATE() <> 0 ROLLBACK;
+            THROW;
+        END CATCH;
+
+        SELECT @TargetUserId AS UserId, @Username AS Username;
+        RETURN;
+    END;
+
+    IF @Action <> N'LOGIN'
+        THROW 50213, N'Auth action không hợp lệ.', 1;
+
+    IF @Password IS NULL
+        THROW 50001, N'Đăng nhập thất bại: sai tên đăng nhập hoặc mật khẩu.', 1;
 
     DECLARE @Hash    VARBINARY(64) = CONVERT(VARBINARY(64), HASHBYTES('SHA2_256', N'bcms|' + @Password));
     DECLARE @UserId  UNIQUEIDENTIFIER;
@@ -268,6 +410,10 @@ BEGIN
 
     DECLARE @Role NVARCHAR(20);
     SELECT @Role = Role FROM dbo.Users WHERE UserId = @SessionUserId AND IsActive = 1;
+    -- FIX-NULLROLE: nếu user không tồn tại / IsActive = 0 thì @Role IS NULL,
+    -- khi đó "@Role NOT IN (...)" trả UNKNOWN => KHÔNG THROW => lọt quyền.
+    IF @Role IS NULL
+        THROW 50040, N'Người dùng không tồn tại hoặc đã bị vô hiệu hóa.', 1;
     IF @Role NOT IN (N'MANAGER', N'COURT_MANAGER')
         THROW 50040, N'Không đủ quyền từ chối booking.', 1;
 
@@ -421,6 +567,9 @@ BEGIN
 
     DECLARE @Role NVARCHAR(20);
     SELECT @Role = Role FROM dbo.Users WHERE UserId = @SessionUserId AND IsActive = 1;
+    -- FIX-NULLROLE: chặn trường hợp @Role IS NULL (user không tồn tại / inactive)
+    IF @Role IS NULL
+        THROW 50060, N'Người dùng không tồn tại hoặc đã bị vô hiệu hóa.', 1;
     IF @Role NOT IN (N'MANAGER', N'COURT_MANAGER')
         THROW 50060, N'Không đủ quyền hoàn thành booking.', 1;
 
@@ -490,6 +639,9 @@ BEGIN
 
     DECLARE @Role NVARCHAR(20);
     SELECT @Role = Role FROM dbo.Users WHERE UserId = @SessionUserId AND IsActive = 1;
+    -- FIX-NULLROLE: chặn trường hợp @Role IS NULL (user không tồn tại / inactive)
+    IF @Role IS NULL
+        THROW 50070, N'Người dùng không tồn tại hoặc đã bị vô hiệu hóa.', 1;
     IF @Role NOT IN (N'MANAGER', N'COURT_MANAGER')
         THROW 50070, N'Không đủ quyền tạo sân.', 1;
 
@@ -542,6 +694,9 @@ BEGIN
 
     DECLARE @Role NVARCHAR(20);
     SELECT @Role = Role FROM dbo.Users WHERE UserId = @SessionUserId AND IsActive = 1;
+    -- FIX-NULLROLE: chặn trường hợp @Role IS NULL (user không tồn tại / inactive)
+    IF @Role IS NULL
+        THROW 50080, N'Người dùng không tồn tại hoặc đã bị vô hiệu hóa.', 1;
     IF @Role NOT IN (N'MANAGER', N'COURT_MANAGER')
         THROW 50080, N'Không đủ quyền sửa sân.', 1;
 
@@ -597,6 +752,9 @@ BEGIN
 
     DECLARE @Role NVARCHAR(20);
     SELECT @Role = Role FROM dbo.Users WHERE UserId = @SessionUserId AND IsActive = 1;
+    -- FIX-NULLROLE: chặn trường hợp @Role IS NULL (user không tồn tại / inactive)
+    IF @Role IS NULL
+        THROW 50090, N'Người dùng không tồn tại hoặc đã bị vô hiệu hóa.', 1;
     IF @Role NOT IN (N'MANAGER', N'COURT_MANAGER')
         THROW 50090, N'Không đủ quyền ngừng hoạt động sân.', 1;
 
@@ -644,6 +802,32 @@ BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
 
+    -- Public endpoint vẫn phải tự bảo vệ hợp đồng thời gian ở tầng DB; không
+    -- tin rằng mọi caller đều đi qua validation của HTTP API.
+    IF @StartTime IS NULL OR @EndTime IS NULL
+        THROW 50120, N'Bạn phải nhập đầy đủ thời gian bắt đầu và kết thúc.', 1;
+    IF @StartTime >= @EndTime
+        THROW 50121, N'Thời gian kết thúc phải lớn hơn thời gian bắt đầu.', 1;
+
+    IF DATEPART(MINUTE, @StartTime) % 30 <> 0 OR DATEPART(MINUTE, @EndTime) % 30 <> 0
+        OR DATEPART(SECOND, @StartTime) <> 0 OR DATEPART(SECOND, @EndTime) <> 0
+        OR DATEPART(MILLISECOND, @StartTime) <> 0 OR DATEPART(MILLISECOND, @EndTime) <> 0
+        THROW 50122, N'Thời gian phải theo bước 30 phút (00 hoặc 30, không có giây/mili-giây).', 1;
+
+    IF CAST(@StartTime AS DATE) <> CAST(@EndTime AS DATE)
+        THROW 50123, N'Khoảng tìm kiếm phải nằm trong cùng một ngày (không được qua đêm).', 1;
+
+    DECLARE @Minutes INT = DATEDIFF(MINUTE, @StartTime, @EndTime);
+    IF @Minutes < 60 OR @Minutes > 180
+        THROW 50124, N'Thời lượng tìm sân phải từ 1 đến 3 giờ.', 1;
+
+    IF CONVERT(TIME(0), @StartTime) < CONVERT(TIME(0), '06:00')
+        OR CONVERT(TIME(0), @EndTime) > CONVERT(TIME(0), '22:00')
+        THROW 50125, N'Khoảng tìm kiếm phải nằm trong khung hoạt động 06:00–22:00.', 1;
+
+    IF @StartTime <= SYSDATETIME()
+        THROW 50126, N'Không cho phép tìm sân trong quá khứ.', 1;
+
     SELECT
         c.CourtId,
         c.CourtName,
@@ -652,7 +836,9 @@ BEGIN
         c.SizeType,
         c.PricePerHour,
         c.PricePerThreeHours,
-        dbo.fn_IsCourtAvailable(c.CourtId, @StartTime, @EndTime) AS IsAvailable
+        -- IMP-04: trước đây scalar UDF được gọi 2 LẦN cho MỖI sân (SELECT + WHERE).
+        -- WHERE đã lọc = 1 nên cột này luôn bằng 1 => trả hằng số, giảm 50% số lần gọi UDF.
+        CAST(1 AS BIT) AS IsAvailable
     FROM dbo.Courts c
     WHERE c.IsActive = 1
       AND (@CourtId IS NULL OR c.CourtId = @CourtId)
@@ -775,6 +961,9 @@ BEGIN
 
     DECLARE @Role NVARCHAR(20);
     SELECT @Role = Role FROM dbo.Users WHERE UserId = @SessionUserId AND IsActive = 1;
+    -- FIX-NULLROLE: chặn trường hợp @Role IS NULL (user không tồn tại / inactive)
+    IF @Role IS NULL
+        THROW 50110, N'Người dùng không tồn tại hoặc đã bị vô hiệu hóa.', 1;
     IF @Role NOT IN (N'MANAGER', N'COURT_MANAGER')
         THROW 50110, N'Chỉ MANAGER/COURT_MANAGER được xem dashboard.', 1;
 

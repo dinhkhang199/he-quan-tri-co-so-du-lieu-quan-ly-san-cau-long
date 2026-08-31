@@ -122,7 +122,7 @@ function TopCourtsPanel({ courts }: { courts: DashboardTopCourt[] }) {
             </p>
           </div>
           <span className="bp-dash-courts__icon" aria-hidden="true">
-            <BpIcon name="sports_badminton" size={20} />
+            <BpIcon name="stadium" size={20} />
           </span>
         </li>
       ))}
@@ -229,7 +229,7 @@ export function ManagerDashboardPage() {
             <KpiCard
               label="Đã xác nhận (BOOKED)"
               value={countFmt.format(overview.BookedCount)}
-              icon="sports_badminton"
+              icon="event_available"
               tone="booked"
               footer="Booking đã được xác nhận"
             />

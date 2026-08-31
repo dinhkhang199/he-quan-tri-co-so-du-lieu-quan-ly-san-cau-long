@@ -15,11 +15,12 @@ export function createSessionMiddleware(cfg: AppConfig) {
     name: SESSION_COOKIE_NAME,
     resave: false,
     saveUninitialized: false,
+    rolling: false,
     cookie: {
       httpOnly: true,
       sameSite: 'lax',
-      secure: false, // local dev over http; enable behind TLS in production
-      maxAge: 1000 * 60 * 60 * 8, // 8h
+      secure: cfg.isProd,
+      maxAge: cfg.sessionTtlMs,
     },
   });
 }

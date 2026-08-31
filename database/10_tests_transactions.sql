@@ -63,8 +63,8 @@ BEGIN TRAN;
     WHERE CourtId = @c6 AND StartTime = @t06;
     PRINT N'[PH-01] Lần đọc 1: ' + CAST(@n1 AS VARCHAR(10)) + N' booking (trước khi B insert)';
 
-    PRINT N'[PH-01] >>> ĐANG CHỜ 8 giây: chạy insert "WINDOW B" ở cửa sổ #2 rồi quay lại <<<';
-    WAITFOR DELAY '00:00:08';
+    PRINT N'[PH-01] >>> ĐANG CHỜ 20 giây: chạy insert "WINDOW B" ở cửa sổ #2 rồi quay lại <<<';
+    WAITFOR DELAY '00:00:20';   -- IMP-08: 8s qua ngan de kip chay tay o cua so #2
 
     SELECT @n2 = COUNT(*) FROM dbo.Bookings
     WHERE CourtId = @c6 AND StartTime = @t06;
@@ -73,9 +73,15 @@ BEGIN TRAN;
     IF @n2 > @n1
         PRINT N'[PH-01] >>> KẾT LUẬN: PHANTOM xảy ra trong READ COMMITTED (tập kết quả đổi sau commit của session khác).';
     ELSE
-        PRINT N'[PH-01] Chưa thấy phantom - nhớ chạy insert ở cửa sổ #2 trong lúc WAITFOR.';
+        PRINT N'[PH-01] >>> FAIL / CHƯA CÓ BẰNG CHỨNG: chua quan sat duoc phantom (cua so #2 chua kip INSERT).';
 
 ROLLBACK;
+
+/* IMP-08 (contract muc 17 - khong claim khi khong co bang chung):
+   Truoc day khi cua so #2 khong chay kip, script chi PRINT mot dong nhac nho
+   nen file evidence de bi doc thanh PASS. Nay bao loi severity 16 de thay ro. */
+IF @n2 <= @n1
+    RAISERROR(N'[PH-01] FAIL: chua quan sat duoc phantom. Chay lai bang 2 session: tests/concurrency/phantom_session_A.sql + phantom_session_B.sql roi luu evidence moi.', 16, 1);
 GO
 
 -- ------------------------------------------------------------
@@ -115,6 +121,10 @@ BEGIN TRAN;
         PRINT N'[PH-02] >>> KẾT LUẬN: SERIALIZABLE ngăn phantom (predicate ổn định; insert đối thủ bị range lock chặn tới khi A kết thúc).';
     ELSE
         PRINT N'[PH-02] Có phantom - kiểm tra lại isolation level.';
+    -- IMP-08: DIEU KIEN DU: @n1 = @n2 chi co y nghia khi cua so #2 THAT SU da thu
+    -- INSERT va bi block. Neu khong chay cua so #2 thi ket luan nay vo nghia
+    -- (doc 2 lan cung so la hien nhien). Bang chung dang tin: cap script
+    -- tests/concurrency/phantom_session_A.sql + _B.sql (dong bo bang bang co).
 
 ROLLBACK;   -- sau rollback, insert treo ở cửa sổ #2 mới hoàn tất
 GO

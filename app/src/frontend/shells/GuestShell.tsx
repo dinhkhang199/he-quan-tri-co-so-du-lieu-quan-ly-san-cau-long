@@ -5,6 +5,7 @@ import { Button } from '../components/Button';
 import { BpIcon } from '../components/BpIcon';
 import { useAuth } from '../auth/AuthContext';
 import { roleHome } from '../auth/guards';
+import { FestivalDecor } from '../components/FestivalDecor';
 
 /**
  * Guest shell: public court-search visual language (locked
@@ -24,6 +25,7 @@ export function GuestShell() {
   return (
     <div className="bp-guest">
       <div className="bp-guest__pattern" aria-hidden="true" />
+      <FestivalDecor />
       <header className="bp-guest__topbar">
         <div className="bp-guest__topbar-inner">
           <div className="bp-guest__left">

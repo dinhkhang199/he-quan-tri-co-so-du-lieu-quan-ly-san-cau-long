@@ -68,25 +68,30 @@ when it is empty or when a caller-supplied `@UserId` does not match the context.
    `sp_Login` runs exactly once on it, establishing `SESSION_CONTEXT`; every
    subsequent protected procedure call for that user runs on the **same** connection,
    so the context is always present and never mixed with another user. On logout /
-   session expiry the connection is closed (context disappears). Guest/public calls
+   session expiry the connection is closed (context disappears). A periodic sweeper
+   enforces the same absolute `sessionTtlMs` as the non-rolling cookie plus a shorter
+   idle timeout, including when the browser disappears without calling logout.
+   Guest/public calls
    (`sp_GetAvailableCourts`, health) use the ordinary shared pool — no context needed.
 
 ### Implementation (bootstrap plumbing, no auth yet)
-- `src/server/db/sessionDb.ts` — `withSessionConnection(sessionId, fn)`:
+- `src/server/db/sessionDb.ts` — `createSession` + `withExistingConnection`:
   - holds a `Map<string, SessionConnection>` (connection + serialized work chain);
-  - creates the dedicated `mssql.Connection` on first use;
+  - creates the dedicated single-connection pool only after a successful login flow;
   - **serializes** work per session so two requests never interleave SESSION_CONTEXT
     on the same connection;
+  - records `createdAt`/`lastUsedAt` and evicts entries at absolute or idle expiry;
+  - exposes idempotent `startReaper()` / `stopReaper()` for the server lifecycle;
   - `closeSession(sessionId)` closes the connection and evicts the entry;
-  - `activeSessionConnections()` for health/diagnostics.
+  - `activeCount()` for health/diagnostics.
 - `src/server/db/pool.ts` — shared `mssql.ConnectionPool` for public/guest SPs.
-- Authentication wiring (`sp_Login` under a session) is **Phase 2.2**, not here.
+- Authentication runs `sp_Login` on that dedicated connection before the session is usable.
 
 ## D. How Stored Procedures will be called
 - Task **only** through the 14 contract procedures / 4 views (no direct DML from app).
 - Server constructs `sql.Request` on the session connection, binds named params
   matching the SP signature, `execute('dbo.sp_...')`, returns rowsets as typed DTOs.
-- A thin `spError.ts` maps known SQL error numbers (50001..50110, 1205 deadlock)
+- A thin `spError.ts` maps known SQL error numbers (including IMP-15 50120..50126 and 1205 deadlock)
   to stable Vietnamese messages for the UI while logging the technical detail.
 
 ## E. Why the design does not trust browser UserId/Role

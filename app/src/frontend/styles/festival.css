@@ -1,0 +1,1239 @@
+/* ========================================================================
+   BadmintonPro · Mid-Autumn visual system
+   Loaded last on purpose: this layer reskins every existing business screen
+   without changing its layout contract or interactive behavior.
+   ======================================================================== */
+
+:root {
+  --bp-night: #111a3a;
+  --bp-night-deep: #090f29;
+  --bp-night-soft: #26305c;
+  --bp-moon: #f5cc67;
+  --bp-moon-soft: #ffe8a3;
+  --bp-vermilion: #b7442d;
+  --bp-vermilion-bright: #d8643f;
+  --bp-paper: #fffaf0;
+  --bp-paper-deep: #f1e3c4;
+  --bp-ink: #2b211f;
+}
+
+::selection {
+  color: var(--bp-night-deep);
+  background: var(--bp-moon-soft);
+}
+
+body {
+  background-color: var(--bp-color-background);
+  background-image:
+    radial-gradient(circle at 8% 18%, rgba(245, 204, 103, 0.12) 0 2px, transparent 2.5px),
+    radial-gradient(circle at 82% 9%, rgba(183, 68, 45, 0.07) 0 1.5px, transparent 2px),
+    linear-gradient(115deg, rgba(255, 255, 255, 0.5), transparent 45%);
+  background-size: 44px 44px, 38px 38px, 100% 100%;
+}
+
+h1,
+h2,
+h3,
+.bp-page-header__title,
+.bp-login__hero-title,
+.bp-login__title,
+.bp-court-card__name,
+.bp-court__name {
+  font-family: var(--bp-font-display);
+}
+
+.bp-focus-ring:focus-visible,
+:where(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid var(--bp-moon);
+  outline-offset: 2px;
+}
+
+/* ---------- Festival scene ---------- */
+.bp-festival {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.bp-festival--hero {
+  position: absolute;
+  z-index: 1;
+}
+
+.bp-festival__moon {
+  position: absolute;
+  top: 5.5rem;
+  right: 5vw;
+  width: 10rem;
+  height: 10rem;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 28%, #fff4c8 0, var(--bp-moon-soft) 34%, var(--bp-moon) 72%, #e4a942 100%);
+  box-shadow:
+    0 0 0 1px rgba(255, 236, 166, 0.7),
+    0 0 42px rgba(245, 204, 103, 0.34),
+    0 0 110px rgba(245, 204, 103, 0.18);
+  opacity: 0.14;
+}
+
+.bp-festival--hero .bp-festival__moon {
+  top: 8%;
+  right: 8%;
+  width: clamp(13rem, 24vw, 24rem);
+  height: clamp(13rem, 24vw, 24rem);
+  opacity: 1;
+  animation: bp-moon-breathe 7s ease-in-out infinite;
+}
+
+.bp-festival__crater {
+  position: absolute;
+  display: block;
+  border-radius: 50%;
+  background: rgba(191, 127, 49, 0.13);
+  box-shadow: inset 1px 1px 4px rgba(123, 73, 34, 0.09);
+}
+
+.bp-festival__crater--one {
+  width: 18%;
+  height: 18%;
+  left: 22%;
+  top: 26%;
+}
+
+.bp-festival__crater--two {
+  width: 11%;
+  height: 11%;
+  right: 21%;
+  top: 18%;
+}
+
+.bp-festival__crater--three {
+  width: 23%;
+  height: 13%;
+  right: 18%;
+  bottom: 22%;
+  transform: rotate(-25deg);
+}
+
+.bp-festival__lantern {
+  position: absolute;
+  top: 0;
+  width: 3.25rem;
+  height: 8rem;
+  transform-origin: 50% 0;
+  opacity: 0.14;
+}
+
+.bp-festival__lantern::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 1px;
+  height: 2.1rem;
+  background: var(--bp-moon);
+}
+
+.bp-festival__lantern--left {
+  left: 6vw;
+  animation: bp-lantern-sway 5.8s ease-in-out infinite;
+}
+
+.bp-festival__lantern--right {
+  right: 19vw;
+  transform: scale(0.78);
+  animation: bp-lantern-sway 6.7s ease-in-out -1.4s infinite;
+}
+
+.bp-festival--hero .bp-festival__lantern {
+  opacity: 1;
+}
+
+.bp-festival--hero .bp-festival__lantern--left {
+  left: 9%;
+}
+
+.bp-festival--hero .bp-festival__lantern--right {
+  right: 42%;
+}
+
+.bp-festival__lantern-cap,
+.bp-festival__lantern-body,
+.bp-festival__lantern-tail {
+  position: absolute;
+  display: block;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.bp-festival__lantern-cap {
+  top: 1.9rem;
+  width: 2.15rem;
+  height: 0.32rem;
+  border-radius: 99px;
+  background: var(--bp-moon);
+}
+
+.bp-festival__lantern-body {
+  top: 2.2rem;
+  width: 3.1rem;
+  height: 3.5rem;
+  border-radius: 46% 46% 42% 42%;
+  border: 2px solid #f1b151;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 0.55rem, rgba(255, 214, 117, 0.38) 0.6rem 0.68rem),
+    linear-gradient(135deg, #d85f3e, #a62f28);
+  box-shadow: 0 0 25px rgba(232, 105, 55, 0.38);
+}
+
+.bp-festival__lantern-body::after {
+  content: '';
+  position: absolute;
+  left: 0.2rem;
+  right: 0.2rem;
+  bottom: -0.33rem;
+  height: 0.32rem;
+  border-radius: 99px;
+  background: var(--bp-moon);
+}
+
+.bp-festival__lantern-tail {
+  top: 5.9rem;
+  width: 1.25rem;
+  height: 1.4rem;
+  border-left: 2px solid var(--bp-moon);
+  border-right: 2px solid var(--bp-moon);
+}
+
+.bp-festival__cloud {
+  position: absolute;
+  display: block;
+  width: 13rem;
+  height: 2.25rem;
+  border: 2px solid rgba(201, 152, 73, 0.28);
+  border-top: 0;
+  border-radius: 0 0 50% 50%;
+  opacity: 0.45;
+}
+
+.bp-festival__cloud::before,
+.bp-festival__cloud::after {
+  content: '';
+  position: absolute;
+  border: 2px solid rgba(201, 152, 73, 0.28);
+  border-bottom: 0;
+  border-radius: 100% 100% 0 0;
+}
+
+.bp-festival__cloud::before {
+  width: 4.5rem;
+  height: 2rem;
+  left: 2rem;
+  top: -1.85rem;
+}
+
+.bp-festival__cloud::after {
+  width: 6rem;
+  height: 2.8rem;
+  right: 1rem;
+  top: -2.65rem;
+}
+
+.bp-festival__cloud--one {
+  right: 1.5vw;
+  bottom: 8vh;
+}
+
+.bp-festival__cloud--two {
+  left: 16vw;
+  bottom: 19vh;
+  transform: scale(0.72);
+}
+
+.bp-festival--hero .bp-festival__cloud {
+  border-color: rgba(255, 228, 158, 0.38);
+}
+
+.bp-festival--hero .bp-festival__cloud::before,
+.bp-festival--hero .bp-festival__cloud::after {
+  border-color: rgba(255, 228, 158, 0.38);
+}
+
+.bp-festival__stars {
+  position: absolute;
+  color: var(--bp-moon);
+  font-size: 1.5rem;
+  opacity: 0.25;
+  animation: bp-star-pulse 2.8s ease-in-out infinite;
+}
+
+.bp-festival__stars--one {
+  top: 21%;
+  left: 32%;
+}
+
+.bp-festival__stars--two {
+  top: 13%;
+  right: 39%;
+  font-size: 1rem;
+  animation-delay: 1.1s;
+}
+
+.bp-festival--hero .bp-festival__stars {
+  opacity: 0.9;
+}
+
+@keyframes bp-lantern-sway {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(4deg); }
+}
+
+@keyframes bp-moon-breathe {
+  0%, 100% { box-shadow: 0 0 42px rgba(245, 204, 103, 0.34), 0 0 110px rgba(245, 204, 103, 0.18); }
+  50% { box-shadow: 0 0 58px rgba(245, 204, 103, 0.44), 0 0 140px rgba(245, 204, 103, 0.24); }
+}
+
+@keyframes bp-star-pulse {
+  0%, 100% { opacity: 0.28; transform: scale(0.86); }
+  50% { opacity: 0.9; transform: scale(1.12); }
+}
+
+/* ---------- Brand, controls and common surfaces ---------- */
+.bp-brand {
+  gap: 0.7rem;
+}
+
+.bp-brand__mark,
+.bp-login__logo {
+  color: var(--bp-moon-soft);
+  border: 1px solid rgba(245, 204, 103, 0.64);
+  background: linear-gradient(145deg, var(--bp-vermilion-bright), #9d3027);
+  box-shadow: 0 5px 16px rgba(130, 42, 29, 0.24), inset 0 1px rgba(255, 240, 185, 0.28);
+}
+
+.bp-brand__copy {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.08rem;
+}
+
+.bp-brand__name {
+  font-family: var(--bp-font-display);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+}
+
+.bp-brand__festival {
+  color: var(--bp-color-primary);
+  font-family: var(--bp-font-ui);
+  font-size: 0.54rem;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.bp-brand--sm .bp-brand__festival {
+  display: none;
+}
+
+.bp-btn--primary,
+.bp-courts__submit,
+.bp-court-card__cta:not(.bp-court-card__cta--login),
+.bp-mgr__action--primary {
+  color: #fffaf0;
+  background: linear-gradient(135deg, var(--bp-vermilion-bright), var(--bp-color-primary-deep));
+  border: 1px solid rgba(121, 37, 27, 0.34);
+  box-shadow: 0 8px 20px -10px rgba(151, 45, 29, 0.7), inset 0 1px rgba(255, 237, 184, 0.22);
+}
+
+.bp-btn--primary:hover:not(:disabled),
+.bp-courts__submit:hover:not(:disabled),
+.bp-court-card__cta:not(.bp-court-card__cta--login):hover:not(:disabled) {
+  background: linear-gradient(135deg, #e06e42, #9e3326);
+  box-shadow: 0 11px 26px -11px rgba(151, 45, 29, 0.8), inset 0 1px rgba(255, 237, 184, 0.3);
+  transform: translateY(-1px);
+}
+
+.bp-btn--secondary,
+.bp-btn--outline,
+.bp-icon-btn,
+.bp-history__filter-btn {
+  border-color: var(--bp-color-outline-variant);
+}
+
+.bp-icon-btn:hover,
+.bp-btn--ghost:hover:not(:disabled) {
+  color: var(--bp-color-primary);
+  background: rgba(245, 204, 103, 0.16);
+}
+
+.bp-field__input,
+.bp-courts__input,
+.bp-courts__sort-select,
+.bp-booking__input,
+.bp-history__select,
+.bp-history__date,
+.bp-court-form input,
+.bp-court-form select {
+  border-color: var(--bp-color-outline-variant);
+  background: rgba(255, 252, 246, 0.94);
+  box-shadow: inset 0 1px 2px rgba(87, 48, 30, 0.04);
+}
+
+.bp-field__input:focus,
+.bp-courts__input:focus,
+.bp-courts__sort-select:focus,
+.bp-booking__input:focus,
+.bp-history__select:focus,
+.bp-history__date:focus {
+  border-color: var(--bp-vermilion);
+  box-shadow: 0 0 0 3px rgba(183, 68, 45, 0.13), 0 5px 14px rgba(82, 45, 29, 0.05);
+}
+
+.bp-card,
+.bp-courts__filter,
+.bp-court-card,
+.bp-booking__card,
+.bp-history__card,
+.bp-courts-mgr__card,
+.bp-court,
+.bp-notif__list,
+.bp-dash-kpi,
+.bp-dash__chart-card,
+.bp-dash__courts-card {
+  background: rgba(255, 250, 240, 0.95);
+  border-color: rgba(190, 148, 84, 0.32);
+  box-shadow: var(--bp-shadow-card);
+}
+
+.bp-card,
+.bp-courts__filter,
+.bp-court-card,
+.bp-booking__card,
+.bp-history__card,
+.bp-courts-mgr__card,
+.bp-dash-kpi {
+  border-top: 3px solid rgba(201, 150, 65, 0.62);
+}
+
+.bp-card:hover,
+.bp-court-card:hover,
+.bp-court:hover {
+  border-color: rgba(183, 68, 45, 0.34);
+}
+
+.bp-page-header {
+  position: relative;
+}
+
+.bp-page-header::before {
+  content: '☾';
+  position: absolute;
+  left: -1.8rem;
+  top: -0.1rem;
+  color: var(--bp-color-primary);
+  font-size: 1.25rem;
+  opacity: 0.7;
+}
+
+.bp-page-header__title {
+  color: var(--bp-night);
+  letter-spacing: -0.035em;
+}
+
+.bp-page-header__subtitle {
+  color: var(--bp-color-on-surface-variant);
+}
+
+.bp-badge {
+  border: 1px solid rgba(122, 83, 44, 0.12);
+}
+
+.bp-skeleton {
+  background: linear-gradient(90deg, #eee1c8 25%, #fff7e7 50%, #eee1c8 75%);
+  background-size: 200% 100%;
+}
+
+/* ---------- Guest + customer navigation ---------- */
+.bp-guest,
+.bp-customer {
+  position: relative;
+  background:
+    radial-gradient(circle at 88% 8rem, rgba(245, 204, 103, 0.16), transparent 17rem),
+    linear-gradient(180deg, #f7f0de, #f4ead5);
+}
+
+.bp-guest__pattern {
+  background-color: transparent;
+  background-image:
+    radial-gradient(rgba(123, 90, 58, 0.18) 0.6px, transparent 0.8px),
+    radial-gradient(rgba(183, 68, 45, 0.07) 0.6px, transparent 0.8px),
+    linear-gradient(120deg, transparent 48%, rgba(183, 68, 45, 0.025) 49%, transparent 50%);
+  background-size: 24px 24px, 24px 24px, 100% 100%;
+  background-position: 0 0, 12px 12px, 0 0;
+  opacity: 0.62;
+}
+
+.bp-guest__topbar,
+.bp-customer__topbar,
+.bp-manager__topbar {
+  color: #fff7df;
+  background:
+    linear-gradient(90deg, rgba(9, 15, 41, 0.97), rgba(24, 34, 76, 0.96)),
+    var(--bp-night);
+  border-bottom: 1px solid rgba(245, 204, 103, 0.4);
+  box-shadow: 0 8px 26px -15px rgba(9, 15, 41, 0.9);
+}
+
+.bp-guest__topbar::after,
+.bp-customer__topbar::after,
+.bp-manager__topbar::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--bp-moon), var(--bp-vermilion), var(--bp-moon), transparent);
+  opacity: 0.6;
+}
+
+.bp-guest__topbar .bp-brand__name,
+.bp-customer__topbar .bp-brand__name,
+.bp-manager__topbar .bp-brand__name {
+  color: #fff8e8;
+}
+
+.bp-guest__topbar .bp-brand__festival,
+.bp-customer__topbar .bp-brand__festival,
+.bp-manager__topbar .bp-brand__festival {
+  color: var(--bp-moon);
+}
+
+.bp-guest__link,
+.bp-customer__link,
+.bp-guest__topbar .bp-icon-btn,
+.bp-customer__topbar .bp-icon-btn,
+.bp-manager__menu-btn,
+.bp-manager__scope {
+  color: rgba(255, 247, 223, 0.78);
+}
+
+.bp-guest__link:hover,
+.bp-customer__link:hover,
+.bp-guest__link--active,
+.bp-customer__link--active,
+.bp-guest__topbar .bp-icon-btn:hover,
+.bp-customer__topbar .bp-icon-btn:hover {
+  color: var(--bp-moon-soft);
+  border-bottom-color: var(--bp-moon);
+}
+
+.bp-guest__topbar .bp-icon-btn:hover,
+.bp-customer__topbar .bp-icon-btn:hover,
+.bp-manager__menu-btn:hover {
+  background: rgba(245, 204, 103, 0.12);
+}
+
+.bp-guest__main,
+.bp-customer__main,
+.bp-manager__main {
+  position: relative;
+  z-index: 1;
+}
+
+.bp-content {
+  position: relative;
+  z-index: 2;
+}
+
+/* ---------- Manager shell ---------- */
+.bp-manager {
+  position: relative;
+  background:
+    radial-gradient(circle at 92% 10%, rgba(245, 204, 103, 0.16), transparent 20rem),
+    var(--bp-color-background);
+}
+
+.bp-manager__side {
+  z-index: 35;
+  color: rgba(255, 247, 223, 0.84);
+  background:
+    radial-gradient(circle at 30% 95%, rgba(183, 68, 45, 0.22), transparent 14rem),
+    linear-gradient(180deg, #111a3a, #090f29);
+  border-right: 1px solid rgba(245, 204, 103, 0.3);
+}
+
+.bp-manager__brand {
+  border-bottom-color: rgba(245, 204, 103, 0.16);
+}
+
+.bp-manager__side .bp-brand__name {
+  color: #fff8e8;
+}
+
+.bp-manager__side .bp-brand__festival {
+  color: var(--bp-moon);
+}
+
+.bp-manager__role {
+  color: var(--bp-moon-soft);
+  background: rgba(183, 68, 45, 0.32);
+  border: 1px solid rgba(245, 204, 103, 0.22);
+}
+
+.bp-manager__link {
+  color: rgba(255, 247, 223, 0.67);
+}
+
+.bp-manager__link:hover {
+  color: #fff8e8;
+  background: rgba(245, 204, 103, 0.09);
+}
+
+.bp-manager__link--active {
+  color: var(--bp-moon-soft);
+  background: linear-gradient(90deg, rgba(183, 68, 45, 0.42), rgba(183, 68, 45, 0.08));
+  box-shadow: inset 3px 0 var(--bp-moon);
+}
+
+.bp-manager__footer {
+  border-top-color: rgba(245, 204, 103, 0.16);
+}
+
+.bp-manager__logout {
+  color: #ffb69f;
+}
+
+.bp-manager__logout:hover {
+  color: #fff4e2;
+  background: rgba(183, 68, 45, 0.28);
+}
+
+.bp-manager__scope {
+  background: rgba(245, 204, 103, 0.08);
+  border: 1px solid rgba(245, 204, 103, 0.18);
+}
+
+.bp-manager__search .bp-field__input {
+  color: #fff8e8;
+  background: rgba(255, 250, 240, 0.08);
+  border-color: rgba(245, 204, 103, 0.24);
+}
+
+.bp-manager__search .bp-field__input::placeholder {
+  color: rgba(255, 247, 223, 0.54);
+}
+
+.bp-manager__search .bp-field__icon {
+  color: var(--bp-moon);
+}
+
+/* ---------- Court search + booking ---------- */
+.bp-courts__filter-title,
+.bp-booking__form-title,
+.bp-booking__rules-title {
+  color: var(--bp-night);
+}
+
+.bp-court-card__media-fallback,
+.bp-court__media-fallback,
+.bp-booking__media-fallback {
+  position: relative;
+  padding: 0;
+  overflow: hidden;
+  color: #fff6dc;
+  background:
+    radial-gradient(circle at 75% 28%, var(--bp-moon) 0 2.4rem, rgba(245, 204, 103, 0.15) 2.45rem 3.5rem, transparent 3.55rem),
+    linear-gradient(145deg, var(--bp-night-soft), var(--bp-night-deep));
+}
+
+.bp-pixel-court-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 48%;
+  image-rendering: pixelated;
+  transform: scale(1.01);
+  transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1), filter 0.3s ease;
+}
+
+.bp-court-card__media-fallback::after,
+.bp-court__media-fallback::after,
+.bp-booking__media-fallback::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(9, 15, 41, 0.03), rgba(9, 15, 41, 0.18));
+  box-shadow: inset 0 0 0 1px rgba(245, 204, 103, 0.12);
+}
+
+.bp-court-card:hover .bp-pixel-court-image,
+.bp-court:hover .bp-pixel-court-image {
+  transform: scale(1.055);
+  filter: saturate(1.08) brightness(1.03);
+}
+
+.bp-court-card__available,
+.bp-court__status--active,
+.bp-booking__available {
+  color: #7d321f;
+  background: rgba(255, 232, 163, 0.94);
+  border-color: rgba(183, 68, 45, 0.18);
+}
+
+.bp-court-card__dot,
+.bp-court__status--active .bp-court__dot,
+.bp-booking__dot {
+  background: var(--bp-vermilion-bright);
+}
+
+.bp-court-card__chip,
+.bp-court__chip,
+.bp-booking__summary {
+  background: rgba(241, 227, 196, 0.68);
+  border-color: rgba(190, 148, 84, 0.26);
+}
+
+.bp-court-card__price strong,
+.bp-court__price-value,
+.bp-booking__price {
+  color: var(--bp-color-primary);
+}
+
+.bp-booking__rules,
+.bp-booking__summary {
+  background: rgba(245, 204, 103, 0.09);
+}
+
+.bp-booking__success-icon,
+.bp-auth-result__icon {
+  color: var(--bp-vermilion);
+  filter: drop-shadow(0 5px 12px rgba(183, 68, 45, 0.2));
+}
+
+/* ---------- Tables, history, notifications ---------- */
+.bp-history__table th,
+.bp-mgr__table th {
+  color: #65442d;
+  background: linear-gradient(180deg, #f4e7cc, #ebd9b5);
+  border-bottom-color: rgba(169, 123, 58, 0.28);
+}
+
+.bp-history__table tbody tr:hover,
+.bp-mgr__table tbody tr:hover,
+.bp-notif__item:hover {
+  background: rgba(245, 204, 103, 0.1);
+}
+
+.bp-history__code,
+.bp-notif__meta .bp-mono {
+  color: var(--bp-color-primary);
+}
+
+.bp-notif__seg,
+.bp-courts-mgr__seg {
+  background: rgba(231, 211, 170, 0.66);
+  border-color: rgba(190, 148, 84, 0.22);
+}
+
+.bp-notif__seg-btn--active,
+.bp-courts-mgr__seg-btn--active {
+  color: var(--bp-color-primary);
+  background: var(--bp-paper);
+  box-shadow: var(--bp-shadow-card);
+}
+
+.bp-notif__item--unread,
+.bp-notif__item--unread:hover {
+  background: linear-gradient(90deg, rgba(255, 232, 163, 0.32), rgba(255, 250, 240, 0.96));
+}
+
+.bp-notif__bar,
+.bp-toast__bar::after {
+  background: linear-gradient(var(--bp-moon), var(--bp-vermilion));
+}
+
+.bp-notif__icon--unread,
+.bp-toast__icon {
+  color: var(--bp-color-primary);
+  background: rgba(245, 204, 103, 0.26);
+}
+
+.bp-modal__panel,
+.bp-court-form,
+.bp-toast {
+  background: var(--bp-paper);
+  border-color: rgba(190, 148, 84, 0.34);
+  box-shadow: var(--bp-shadow-popover);
+}
+
+.bp-modal__backdrop,
+.bp-demo__backdrop,
+.bp-manager__overlay {
+  background: rgba(9, 15, 41, 0.66);
+  backdrop-filter: blur(4px);
+}
+
+/* ---------- Dashboard ---------- */
+.bp-dash-kpi {
+  overflow: hidden;
+}
+
+.bp-dash-kpi__blob {
+  opacity: 0.55;
+}
+
+.bp-dash-kpi--pending .bp-dash-kpi__icon,
+.bp-dash-kpi--pending .bp-dash-kpi__blob {
+  color: #9a5424;
+  background: #ffedbd;
+}
+
+.bp-dash-kpi--booked .bp-dash-kpi__icon,
+.bp-dash-kpi--booked .bp-dash-kpi__blob {
+  color: #5e538f;
+  background: #e6def8;
+}
+
+.bp-dash-kpi--users .bp-dash-kpi__icon,
+.bp-dash-kpi--users .bp-dash-kpi__blob {
+  color: #a3372a;
+  background: #f8d7c8;
+}
+
+.bp-dash-kpi--revenue .bp-dash-kpi__icon,
+.bp-dash-kpi--revenue .bp-dash-kpi__blob {
+  color: #7e5a18;
+  background: #f5dfa0;
+}
+
+.bp-dash-chart__fill {
+  background: linear-gradient(180deg, var(--bp-vermilion-bright), var(--bp-color-primary-deep));
+  box-shadow: 0 0 12px rgba(183, 68, 45, 0.14);
+}
+
+.bp-dash-courts__rank,
+.bp-dash-courts__icon {
+  color: var(--bp-color-primary);
+  background: rgba(245, 204, 103, 0.2);
+}
+
+/* ---------- Manager booking transaction demo ---------- */
+.bp-demo__panel {
+  color: #fff8e8;
+  background:
+    radial-gradient(circle at 84% 11%, rgba(245, 204, 103, 0.11), transparent 14rem),
+    linear-gradient(145deg, #182147, #090f29);
+  border: 1px solid rgba(245, 204, 103, 0.25);
+}
+
+.bp-demo__title .material-symbols-outlined,
+.bp-demo__tab--active,
+.bp-demo__ok,
+.bp-demo__terminal strong {
+  color: var(--bp-moon-soft);
+}
+
+.bp-demo__tab--active {
+  border-bottom-color: var(--bp-moon);
+}
+
+.bp-demo__terminal {
+  background: rgba(3, 8, 28, 0.86);
+  border: 1px solid rgba(245, 204, 103, 0.12);
+}
+
+/* ---------- Authentication ---------- */
+.bp-login {
+  background: var(--bp-color-background);
+}
+
+.bp-login__hero {
+  background:
+    radial-gradient(rgba(255, 232, 163, 0.13) 1px, transparent 1.5px),
+    radial-gradient(circle at 72% 22%, rgba(68, 77, 135, 0.48), transparent 28rem),
+    linear-gradient(145deg, #090f29 0%, #17224c 55%, #53273b 100%);
+  background-size: 34px 34px, 100% 100%, 100% 100%;
+}
+
+.bp-login__court-lines {
+  z-index: 0;
+  opacity: 0.38;
+  background-image:
+    repeating-radial-gradient(ellipse at bottom, transparent 0 56px, rgba(245, 204, 103, 0.13) 58px 60px),
+    linear-gradient(90deg, transparent 49.8%, rgba(245, 204, 103, 0.1) 50%, transparent 50.2%);
+  background-size: 100% 100%, 100% 100%;
+}
+
+.bp-login__hero-brand {
+  z-index: 4;
+}
+
+.bp-login__hero-brand .bp-brand__mark {
+  width: 3rem;
+  height: 3rem;
+}
+
+.bp-login__floating-chips {
+  z-index: 4;
+}
+
+.bp-login__chip {
+  color: #fff2cf;
+  border-color: rgba(245, 204, 103, 0.34);
+  background: rgba(20, 29, 66, 0.54);
+  box-shadow: 0 10px 30px rgba(4, 8, 27, 0.22);
+}
+
+.bp-login__chip .bp-icon {
+  color: var(--bp-moon);
+}
+
+.bp-login__glass-panel {
+  border-color: rgba(245, 204, 103, 0.3);
+  background: linear-gradient(135deg, rgba(22, 31, 69, 0.72), rgba(116, 50, 46, 0.32));
+  box-shadow: 0 18px 46px rgba(4, 8, 27, 0.2);
+}
+
+.bp-login__eyebrow {
+  margin-bottom: 0.65rem;
+  color: var(--bp-moon);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+}
+
+.bp-login__eyebrow--panel {
+  margin-bottom: 0.45rem;
+}
+
+.bp-login__hero-title {
+  color: #fff7df;
+  font-size: clamp(2rem, 3.1vw, 3.25rem);
+  line-height: 1.18;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+.bp-login__hero-sub {
+  color: rgba(255, 247, 223, 0.76);
+}
+
+.bp-login__panel {
+  background:
+    radial-gradient(circle at 90% 8%, rgba(245, 204, 103, 0.22), transparent 13rem),
+    radial-gradient(circle at 8% 94%, rgba(183, 68, 45, 0.08), transparent 16rem),
+    #f6efdf;
+}
+
+.bp-login__card {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 250, 240, 0.96);
+  border: 1px solid rgba(186, 139, 73, 0.38);
+  box-shadow: 0 24px 70px -24px rgba(64, 34, 25, 0.36);
+}
+
+.bp-login__card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--bp-moon), var(--bp-vermilion), var(--bp-moon), transparent);
+}
+
+.bp-login__card::after {
+  content: '☁  ·  ☾  ·  ☁';
+  position: absolute;
+  right: 1.2rem;
+  top: 0.75rem;
+  color: rgba(183, 68, 45, 0.14);
+  font-size: 0.9rem;
+  letter-spacing: 0.2em;
+}
+
+.bp-login__title {
+  color: var(--bp-night);
+}
+
+.bp-login__logo {
+  border-radius: 50%;
+}
+
+.bp-login__hero-mobile {
+  position: relative;
+  overflow: hidden;
+  color: #fff7df;
+  background:
+    radial-gradient(circle at 78% 25%, var(--bp-moon) 0 2.4rem, rgba(245, 204, 103, 0.18) 2.45rem 4rem, transparent 4.05rem),
+    linear-gradient(135deg, var(--bp-night-deep), var(--bp-night-soft) 70%, #612e3d);
+}
+
+.bp-login__hero-mobile h1 {
+  position: relative;
+  z-index: 1;
+  font-family: var(--bp-font-display);
+}
+
+.bp-auth-notice {
+  color: #67331f;
+  background: rgba(245, 204, 103, 0.24);
+  border: 1px solid rgba(183, 68, 45, 0.16);
+}
+
+.bp-auth-dev-code {
+  background: rgba(255, 237, 189, 0.24);
+}
+
+/* ---------- Responsive tuning ---------- */
+@media (max-width: 1023px) {
+  .bp-festival:not(.bp-festival--hero) .bp-festival__lantern--right {
+    display: none;
+  }
+
+  .bp-page-header::before {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .bp-brand__festival {
+    display: none;
+  }
+
+  .bp-guest__nav,
+  .bp-customer__nav {
+    gap: 0.75rem;
+    margin-left: 0.35rem;
+  }
+
+  .bp-customer__link,
+  .bp-guest__link {
+    font-size: 0.8rem;
+  }
+
+  .bp-festival:not(.bp-festival--hero) .bp-festival__moon {
+    top: 5rem;
+    right: -2rem;
+    width: 7.5rem;
+    height: 7.5rem;
+  }
+
+  .bp-festival:not(.bp-festival--hero) .bp-festival__lantern,
+  .bp-festival:not(.bp-festival--hero) .bp-festival__stars {
+    display: none;
+  }
+
+  .bp-content {
+    padding-top: 1.5rem;
+  }
+
+  .bp-login__card {
+    border-radius: 1rem;
+    padding: 1.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bp-festival__moon,
+  .bp-festival__lantern,
+  .bp-festival__stars {
+    animation: none !important;
+  }
+}
+
+/* ---------- Pixel-art authentication hero ----------
+   The labels and copy remain live HTML above this artwork for accessibility,
+   localization and crisp rendering at every zoom level. */
+.bp-login__hero {
+  image-rendering: pixelated;
+  background-image:
+    linear-gradient(90deg, rgba(5, 10, 31, 0.58) 0%, rgba(5, 10, 31, 0.2) 48%, transparent 76%),
+    linear-gradient(180deg, rgba(6, 11, 34, 0.02) 35%, rgba(8, 13, 37, 0.54) 100%),
+    url('/assets/login-mid-autumn-pixel-hero.png');
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.bp-login__hero > .bp-festival,
+.bp-login__hero > .bp-login__court-lines {
+  display: none;
+}
+
+.bp-login__chip {
+  background: rgba(10, 17, 48, 0.82);
+  border-color: rgba(245, 204, 103, 0.55);
+  box-shadow: 4px 4px 0 rgba(7, 11, 31, 0.48);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.bp-login__glass-panel {
+  padding: 0;
+  max-width: 34rem;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* Deliberate reading order: supporting chips first, hero statement second. */
+.bp-login__chip--pos-1 {
+  top: 25%;
+  right: auto;
+  left: 7%;
+}
+
+.bp-login__chip--pos-2 {
+  top: 34%;
+  right: auto;
+  left: 7%;
+}
+
+.bp-login__chip--pos-3 {
+  top: 43%;
+  right: auto;
+  left: 7%;
+}
+
+.bp-login__hero-bottom {
+  position: absolute;
+  top: 53%;
+  right: 7%;
+  bottom: auto;
+  left: 7%;
+  z-index: 4;
+}
+
+.bp-login__hero-title {
+  max-width: 31rem;
+  margin-bottom: 0.8rem;
+  font-size: clamp(2rem, 2.8vw, 2.9rem);
+  line-height: 1.16;
+  text-wrap: balance;
+  text-shadow: 0 3px 0 rgba(6, 10, 30, 0.78), 0 8px 24px rgba(5, 9, 28, 0.5);
+}
+
+.bp-login__hero-sub {
+  max-width: 30rem;
+  color: rgba(255, 247, 223, 0.9);
+  line-height: 1.6;
+  text-shadow: 0 2px 5px rgba(5, 9, 28, 0.9);
+}
+
+.bp-login__eyebrow:not(.bp-login__eyebrow--panel) {
+  text-shadow: 0 2px 4px rgba(5, 9, 28, 0.9);
+}
+
+@media (min-width: 768px) and (max-height: 720px) {
+  .bp-login__chip--pos-1 { top: 21%; }
+  .bp-login__chip--pos-2 { top: 31%; }
+  .bp-login__chip--pos-3 { top: 41%; }
+
+  .bp-login__hero-bottom {
+    top: 53%;
+  }
+
+  .bp-login__hero-title {
+    font-size: clamp(1.75rem, 2.5vw, 2.35rem);
+  }
+}
+
+.bp-login__hero-mobile {
+  image-rendering: pixelated;
+  background-image:
+    linear-gradient(90deg, rgba(7, 12, 35, 0.34), rgba(7, 12, 35, 0.08)),
+    url('/assets/login-mid-autumn-pixel-hero.png');
+  background-position: center 18%;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+/* Animated light map aligned with the two lanterns in the pixel hero. */
+.bp-login__hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 7.5% 10%, rgba(255, 183, 70, 0.78) 0, rgba(237, 86, 36, 0.34) 3.2%, transparent 8%),
+    radial-gradient(circle at 47.5% 10%, rgba(255, 190, 79, 0.72) 0, rgba(237, 86, 36, 0.28) 3%, transparent 7.4%);
+  mix-blend-mode: screen;
+  opacity: 0.44;
+  animation: bp-pixel-lantern-flicker 2.6s steps(1, end) infinite;
+}
+
+/* Moon halo: a slow breathing aura with a brighter inner rim. */
+.bp-login__hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 74.5% 20%, rgba(255, 250, 206, 0.28) 0 12%, rgba(255, 211, 97, 0.22) 19%, rgba(255, 194, 64, 0.09) 27%, transparent 36%);
+  mix-blend-mode: screen;
+  opacity: 0.5;
+  transform-origin: 74.5% 20%;
+  animation: bp-pixel-moon-aura 5.2s ease-in-out infinite;
+}
+
+@keyframes bp-pixel-lantern-flicker {
+  0%, 100% { opacity: 0.34; filter: brightness(0.92); }
+  12% { opacity: 0.62; filter: brightness(1.18); }
+  18% { opacity: 0.4; filter: brightness(0.98); }
+  31% { opacity: 0.7; filter: brightness(1.24); }
+  46% { opacity: 0.46; filter: brightness(1); }
+  58% { opacity: 0.76; filter: brightness(1.3); }
+  64% { opacity: 0.38; filter: brightness(0.96); }
+  82% { opacity: 0.58; filter: brightness(1.14); }
+}
+
+@keyframes bp-pixel-moon-aura {
+  0%, 100% {
+    opacity: 0.38;
+    transform: scale(0.98);
+    filter: brightness(0.96);
+  }
+  50% {
+    opacity: 0.72;
+    transform: scale(1.035);
+    filter: brightness(1.18);
+  }
+}
+
+/* The compact mobile banner uses a soft shimmer without positional assumptions. */
+.bp-login__hero-mobile::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 76% 30%, rgba(255, 222, 123, 0.34), transparent 34%);
+  mix-blend-mode: screen;
+  animation: bp-pixel-mobile-glow 4.8s ease-in-out infinite;
+}
+
+@keyframes bp-pixel-mobile-glow {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.78; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bp-login__hero::before,
+  .bp-login__hero::after,
+  .bp-login__hero-mobile::after {
+    animation: none !important;
+  }
+}

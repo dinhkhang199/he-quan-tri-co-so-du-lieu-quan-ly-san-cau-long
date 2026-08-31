@@ -61,8 +61,13 @@ export function CourtCard({ court, startTime, endTime, isCustomer }: CourtCardPr
     <article className="bp-court-card">
       <div className="bp-court-card__media">
         <div className="bp-court-card__media-fallback" aria-hidden="true">
-          <BpIcon name="sports_badminton" size={52} />
-          <span>BadmintonPro</span>
+          <img
+            className="bp-pixel-court-image"
+            src="/assets/badminton-court-mid-autumn-pixel.png"
+            alt=""
+            loading="lazy"
+            decoding="async"
+          />
         </div>
         <div className="bp-court-card__available">
           <span className="bp-court-card__dot" aria-hidden="true" />
@@ -104,7 +109,7 @@ export function CourtCard({ court, startTime, endTime, isCustomer }: CourtCardPr
 
           {isCustomer ? (
             <NavLink to={bookingHref} className="bp-btn bp-btn--primary bp-court-card__cta">
-              <BpIcon name="sports_badminton" size={18} aria-hidden="true" />
+              <BpIcon name="event_available" size={18} aria-hidden="true" />
               <span>Đặt sân</span>
             </NavLink>
           ) : (

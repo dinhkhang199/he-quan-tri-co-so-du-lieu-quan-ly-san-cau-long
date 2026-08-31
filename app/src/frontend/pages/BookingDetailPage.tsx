@@ -269,8 +269,12 @@ export function BookingDetailPage() {
             <Card className="bp-booking__card">
               <div className="bp-booking__media">
                 <div className="bp-booking__media-fallback" aria-hidden="true">
-                  <BpIcon name="sports_badminton" size={52} />
-                  <span>BadmintonPro</span>
+                  <img
+                    className="bp-pixel-court-image"
+                    src="/assets/badminton-court-mid-autumn-pixel.png"
+                    alt=""
+                    decoding="async"
+                  />
                 </div>
                 {availabilityLabel}
               </div>

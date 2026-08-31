@@ -3,6 +3,7 @@ import { ContentShell } from './ContentShell';
 import { BrandLogo } from '../components/BrandLogo';
 import { BpIcon } from '../components/BpIcon';
 import { useAuth } from '../auth/AuthContext';
+import { FestivalDecor } from '../components/FestivalDecor';
 
 interface CustomerNavItem {
   to: string;
@@ -27,6 +28,7 @@ export function CustomerShell() {
 
   return (
     <div className="bp-customer">
+      <FestivalDecor />
       <header className="bp-customer__topbar">
         <div className="bp-customer__topbar-inner">
           <div className="bp-customer__left">

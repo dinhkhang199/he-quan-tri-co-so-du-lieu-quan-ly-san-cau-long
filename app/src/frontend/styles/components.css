@@ -913,6 +913,106 @@
   text-align: center;
 }
 
+.bp-login__account-links {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--bp-color-primary);
+}
+
+.bp-login__account-links a:hover,
+.bp-auth-back a:hover {
+  color: var(--bp-color-primary-deep);
+  text-decoration: underline;
+}
+
+.bp-auth-back {
+  text-align: center;
+  color: var(--bp-color-on-surface-variant);
+  font-size: 0.875rem;
+}
+
+.bp-auth-back a {
+  color: var(--bp-color-primary);
+  font-weight: 700;
+}
+
+.bp-auth-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.875rem 1rem;
+  border-radius: var(--bp-radius-lg);
+  background: var(--bp-color-primary-container);
+  color: var(--bp-color-primary-deep);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.bp-auth-dev-code {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px dashed var(--bp-color-primary);
+  border-radius: var(--bp-radius-lg);
+  color: var(--bp-color-on-surface-variant);
+  font-size: 0.8125rem;
+}
+
+.bp-auth-dev-code strong {
+  color: var(--bp-color-primary-deep);
+  font-family: var(--bp-font-mono);
+  font-size: 1.25rem;
+  letter-spacing: 0.18em;
+}
+
+.bp-auth-link-button {
+  border: 0;
+  background: transparent;
+  color: var(--bp-color-primary);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.bp-auth-result {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  text-align: center;
+}
+
+.bp-auth-result__icon {
+  display: inline-flex;
+  align-self: center;
+  color: var(--bp-color-primary);
+}
+
+.bp-auth-result h3 {
+  font-size: 1.25rem;
+}
+
+.bp-auth-result p {
+  color: var(--bp-color-on-surface-variant);
+  line-height: 1.5;
+}
+
+@media (min-width: 768px) {
+  .bp-login--auth-flow {
+    min-height: 100vh;
+    height: auto;
+    overflow: auto;
+  }
+
+  .bp-login--auth-flow .bp-login__panel {
+    min-height: 100vh;
+  }
+}
+
 .bp-login__guest {
   display: inline-flex;
   align-items: center;

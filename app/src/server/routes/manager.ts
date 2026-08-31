@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import sql from 'mssql';
 import type { SessionDb } from '../db/index.js';
+import { withTransientRetry } from '../db/retry.js';
 import { mapSqlError } from '../../shared/spError.js';
 import type { MappedError } from '../../shared/spError.js';
 import { isValidGuid } from '../time.js';
@@ -22,8 +23,8 @@ import type {
  *
  * Every route runs on the authenticated SESSION_CONTEXT connection (SessionDb)
  * AFTER verifySessionContext(sessionId, userId, role):
- *   - the booking list is a FIXED SELECT from dbo.vw_AllBookings whose WHERE
- *     uses SESSION_CONTEXT(N'Role')/SESSION_CONTEXT(N'UserId') IN SQL, so
+ *   - the booking list is a FIXED SELECT from dbo.vw_AllBookings; the view and
+ *     query both use SESSION_CONTEXT(N'Role')/SESSION_CONTEXT(N'UserId'), so
  *     COURT_MANAGER rows are scoped to `OwnerId = actor` BEFORE they leave SQL
  *     Server (the view exposes c.OwnerId as OwnerId, 05_views.sql);
  *   - every mutation executes dbo.sp_ApproveBooking / sp_RejectBooking /
@@ -57,6 +58,7 @@ function serializeError(mapped: MappedError) {
  */
 function managerMutationStatus(mapped: MappedError): number {
   if (mapped.code === 1205) return 409; // deadlock victim: safe manual retry
+  if (mapped.code === 1222) return 503; // IMP-10: lock timeout → quá tải tạm thời, thử lại sau
   if (mapped.code === 50032 || mapped.code === 50041 || mapped.code === 50051 || mapped.code === 50061) return 404; // not found
   if (mapped.code === 50033 || mapped.code === 50042 || mapped.code === 50054 || mapped.code === 50056 || mapped.code === 50063) return 403; // ownership / self-only
   if (
@@ -212,13 +214,21 @@ export function createManagerRouter(sessionDb: SessionDb): Router {
       }
 
       try {
-        await sessionDb.withExistingConnection(sessionId, async (conn) => {
-          const r = conn
-            .request()
-            .input('SessionUserId', sql.UniqueIdentifier, user.userId)
-            .input('BookingId', sql.UniqueIdentifier, rawBookingId);
-          await r.execute(SP[action]);
-        });
+        // IMP-10: tự thử lại khi gặp deadlock (1205) / lock timeout (1222). Approve
+        // là nơi tranh khoá nặng nhất (UPDLOCK trên dbo.Courts + re-check trùng giờ),
+        // và giao dịch đã rollback trước khi lỗi về đây nên chạy lại không sinh
+        // trạng thái thứ hai.
+        await withTransientRetry(
+          () =>
+            sessionDb.withExistingConnection(sessionId, async (conn) => {
+              const r = conn
+                .request()
+                .input('SessionUserId', sql.UniqueIdentifier, user.userId)
+                .input('BookingId', sql.UniqueIdentifier, rawBookingId);
+              await r.execute(SP[action]);
+            }),
+          { label: SP[action] },
+        );
 
         const body: ManagerMutationResponse = { bookingId: rawBookingId, status: NEW_STATUS[action] };
         res.json(body);

@@ -84,6 +84,8 @@ GO
 -- ------------------------------------------------------------
 -- 4. vw_AllBookings
 --    Chi tiết booking phục vụ quản trị (kèm audit nhãn trạng thái CASE).
+--    View tự áp scope từ SESSION_CONTEXT để quyền SELECT không thể bỏ qua
+--    phân quyền bằng cách truy vấn view trực tiếp ngoài application route.
 -- ------------------------------------------------------------
 IF OBJECT_ID(N'dbo.vw_AllBookings', N'V') IS NOT NULL
     DROP VIEW dbo.vw_AllBookings;
@@ -118,7 +120,14 @@ SELECT
     b.UpdatedAt
 FROM dbo.Bookings b
 INNER JOIN dbo.Users  u ON u.UserId = b.UserId
-INNER JOIN dbo.Courts c ON c.CourtId = b.CourtId;
+INNER JOIN dbo.Courts c ON c.CourtId = b.CourtId
+WHERE
+    (USER_NAME() = N'dbo' AND IS_SRVROLEMEMBER(N'sysadmin') = 1)
+    OR CONVERT(NVARCHAR(20), SESSION_CONTEXT(N'Role')) = N'MANAGER'
+    OR (
+        CONVERT(NVARCHAR(20), SESSION_CONTEXT(N'Role')) = N'COURT_MANAGER'
+        AND c.OwnerId = TRY_CONVERT(UNIQUEIDENTIFIER, SESSION_CONTEXT(N'UserId'))
+    );
 GO
 
 PRINT N'[OK] 4 Views đã được tạo.';

@@ -71,6 +71,14 @@ function toSafeError(mapped: MappedError): { code: number | null; message: strin
   };
 }
 
+function searchFailureStatus(mapped: MappedError): number {
+  if (mapped.code === 1205) return 409;
+  if (mapped.code !== null && [50120, 50121, 50122, 50123, 50124, 50125, 50126].includes(mapped.code)) {
+    return 400;
+  }
+  return 500;
+}
+
 export function createCourtsRouter(cfg: AppConfig): Router {
   const router = Router();
 
@@ -116,8 +124,7 @@ export function createCourtsRouter(cfg: AppConfig): Router {
       res.json(body);
     } catch (err) {
       const mapped = mapSqlError(err);
-      // Shared pool absent/DB unreachable -> 500; business errors surfaced as-is.
-      res.status(mapped.code === 1205 ? 409 : 500).json({ error: toSafeError(mapped) });
+      res.status(searchFailureStatus(mapped)).json({ error: toSafeError(mapped) });
     }
   });
 

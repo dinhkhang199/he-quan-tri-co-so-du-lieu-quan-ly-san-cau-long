@@ -19,6 +19,22 @@ export default tseslint.config(
     },
   },
   {
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      globals: { ...globals.node, ...globals.browser },
+    },
+  },
+  {
+    files: ['tests/**/*.ts'],
+    languageOptions: {
+      globals: { ...globals.node },
+    },
+    rules: {
+      // Test doubles intentionally implement only the Express surface under test.
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
+  {
     files: ['src/frontend/**/*.tsx', 'src/frontend/**/*.ts'],
     plugins: { 'react-hooks': reactHooks },
     rules: {

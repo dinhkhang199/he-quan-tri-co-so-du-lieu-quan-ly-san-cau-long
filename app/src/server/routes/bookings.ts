@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import sql from 'mssql';
 import type { SessionDb } from '../db/index.js';
+import { withTransientRetry } from '../db/retry.js';
 import { mapSqlError } from '../../shared/spError.js';
 import type { MappedError } from '../../shared/spError.js';
 import type { BookingStatus } from '../../shared/contract.js';
@@ -60,6 +61,8 @@ function serializeError(mapped: MappedError) {
  */
 function bookingFailureStatus(mapped: MappedError): number {
   if (mapped.code === 1205) return 409; // deadlock victim: safe retry
+  if (mapped.code === 1222) return 503; // IMP-10: lock timeout → quá tải tạm thời, thử lại sau
+  if (mapped.code === 2601) return 409; // IMP-09: đã có PENDING trùng của chính người này
   if (mapped.code === 50021) return 409; // overlapping BOOKED booking
   if (mapped.code === 50011) return 403; // only CUSTOMER may book
   if (mapped.code !== null) return 400; // every other known THROW is a bad request
@@ -69,6 +72,7 @@ function bookingFailureStatus(mapped: MappedError): number {
 /** Safe HTTP status for a dbo.sp_CancelBooking failure (exact THROW codes). */
 function cancelFailureStatus(mapped: MappedError): number {
   if (mapped.code === 1205) return 409; // deadlock victim: safe retry
+  if (mapped.code === 1222) return 503; // IMP-10: lock timeout → quá tải tạm thời, thử lại sau
   if (mapped.code === 50051) return 404; // booking not found
   if (mapped.code === 50054 || mapped.code === 50056 || mapped.code === 50057) return 403; // ownership/permission
   if (mapped.code === 50052 || mapped.code === 50053 || mapped.code === 50055 || mapped.code === 50058) return 409; // state/deadline/race
@@ -80,6 +84,7 @@ function cancelFailureStatus(mapped: MappedError): number {
 function historyFailureStatus(mapped: MappedError): number {
   if (mapped.code === 51054) return 401; // session context empty/mismatched → re-login
   if (mapped.code === 1205) return 409; // deadlock victim: safe retry
+  if (mapped.code === 1222) return 503; // IMP-10: lock timeout → quá tải tạm thời, thử lại sau
   if (mapped.code !== null) return 400;
   return 500;
 }
@@ -270,13 +275,19 @@ export function createBookingsRouter(sessionDb: SessionDb): Router {
     }
 
     try {
-      await sessionDb.withExistingConnection(sessionId, async (conn) => {
-        const r = conn
-          .request()
-          .input('SessionUserId', sql.UniqueIdentifier, user.userId)
-          .input('BookingId', sql.UniqueIdentifier, rawBookingId);
-        await r.execute('dbo.sp_CancelBooking');
-      });
+      // IMP-10: tự thử lại khi gặp deadlock (1205) / lock timeout (1222).
+      // An toàn vì sp_CancelBooking dùng SET XACT_ABORT ON + ROLLBACK trong CATCH.
+      await withTransientRetry(
+        () =>
+          sessionDb.withExistingConnection(sessionId, async (conn) => {
+            const r = conn
+              .request()
+              .input('SessionUserId', sql.UniqueIdentifier, user.userId)
+              .input('BookingId', sql.UniqueIdentifier, rawBookingId);
+            await r.execute('dbo.sp_CancelBooking');
+          }),
+        { label: 'dbo.sp_CancelBooking' },
+      );
 
       const body: CancelBookingResponse = { bookingId: rawBookingId, status: 'CANCELLED' };
       res.json(body);
@@ -335,21 +346,29 @@ export function createBookingsRouter(sessionDb: SessionDb): Router {
     }
 
     try {
-      const output = await sessionDb.withExistingConnection(sessionId, async (conn) => {
-        const r = conn
-          .request()
-          .input('UserId', sql.UniqueIdentifier, user.userId)
-          .input('CourtId', sql.UniqueIdentifier, courtId)
-          .input('StartTime', sql.DateTime2(0), toSqlDate(window.start))
-          .input('EndTime', sql.DateTime2(0), toSqlDate(window.end))
-          .output('BookingId', sql.UniqueIdentifier)
-          .output('TotalCost', sql.Decimal(12, 0));
-        const result = await r.execute('dbo.sp_BookCourt');
-        return {
-          bookingId: result.output.BookingId as string | undefined,
-          totalCost: result.output.TotalCost as number | undefined,
-        };
-      });
+      // IMP-10: đây là điểm nóng nhất khi nhiều người bấm "Đặt sân" cùng lúc —
+      // sp_BookCourt khoá hàng dbo.Courts (UPDLOCK, ROWLOCK, HOLDLOCK) nên mọi
+      // người đặt cùng một sân bị xếp hàng. Tự thử lại khi 1205/1222 để khách
+      // không phải tự bấm lại; giao dịch đã rollback nên không sinh booking đôi.
+      const output = await withTransientRetry(
+        () =>
+          sessionDb.withExistingConnection(sessionId, async (conn) => {
+            const r = conn
+              .request()
+              .input('UserId', sql.UniqueIdentifier, user.userId)
+              .input('CourtId', sql.UniqueIdentifier, courtId)
+              .input('StartTime', sql.DateTime2(0), toSqlDate(window.start))
+              .input('EndTime', sql.DateTime2(0), toSqlDate(window.end))
+              .output('BookingId', sql.UniqueIdentifier)
+              .output('TotalCost', sql.Decimal(12, 0));
+            const result = await r.execute('dbo.sp_BookCourt');
+            return {
+              bookingId: result.output.BookingId as string | undefined,
+              totalCost: result.output.TotalCost as number | undefined,
+            };
+          }),
+        { label: 'dbo.sp_BookCourt' },
+      );
 
       if (!output.bookingId || output.totalCost == null) {
         res.status(500).json({ error: { code: null, message: 'Không nhận được kết quả từ hệ thống. Vui lòng thử lại.' } });

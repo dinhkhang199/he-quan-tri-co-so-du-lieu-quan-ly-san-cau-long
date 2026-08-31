@@ -63,6 +63,41 @@ export function loginRequest(username: string, password: string): Promise<{ user
   });
 }
 
+export function registerRequest(input: {
+  username: string;
+  phoneNumber: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}): Promise<{ message: string; user: { userId: string; username: string; role: string } }> {
+  return request('/api/auth/register', { method: 'POST', body: JSON.stringify(input) });
+}
+
+export function forgotPasswordRequest(input: {
+  username: string;
+  email: string;
+}): Promise<{
+  message: string;
+  expiresInSeconds: number;
+  emailMasked?: string;
+  emailSent?: boolean;
+  developmentCode?: string;
+  /** Development-only signal so the local UI can reject mismatched demo identity. */
+  matched?: boolean;
+}> {
+  return request('/api/auth/password/forgot', { method: 'POST', body: JSON.stringify(input) });
+}
+
+export function resetPasswordRequest(input: {
+  username: string;
+  email: string;
+  resetCode: string;
+  password: string;
+  confirmPassword: string;
+}): Promise<{ message: string }> {
+  return request('/api/auth/password/reset', { method: 'POST', body: JSON.stringify(input) });
+}
+
 /** Returns the authenticated user or throws ApiError(401) when the session is gone. */
 export function meRequest(): Promise<{ user: AuthUser }> {
   return request<{ user: AuthUser }>('/api/auth/me');

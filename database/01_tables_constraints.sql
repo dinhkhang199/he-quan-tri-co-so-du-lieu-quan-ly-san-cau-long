@@ -24,16 +24,27 @@ CREATE TABLE dbo.Users
     Username     NVARCHAR(50)     NOT NULL,
     PasswordHash VARBINARY(64)    NOT NULL,          -- chỉ lưu hash (SHA2_256 + salt), không bao giờ lưu plaintext
     PhoneNumber  NVARCHAR(20)     NOT NULL,
+    Email        NVARCHAR(254)    NULL,
     Role         NVARCHAR(20)     NOT NULL,
     IsActive     BIT              NOT NULL CONSTRAINT DF_Users_IsActive DEFAULT 1,
     LastLogin    DATETIME2(0)     NULL,
+    PasswordResetCodeHash VARBINARY(64) NULL,
+    PasswordResetExpiresAt DATETIME2(0) NULL,
+    PasswordResetAttempts TINYINT NOT NULL CONSTRAINT DF_Users_PasswordResetAttempts DEFAULT 0,
     CreatedAt    DATETIME2(0)     NOT NULL CONSTRAINT DF_Users_CreatedAt DEFAULT SYSDATETIME(),
     UpdatedAt    DATETIME2(0)     NOT NULL CONSTRAINT DF_Users_UpdatedAt DEFAULT SYSDATETIME(),
     CONSTRAINT PK_Users PRIMARY KEY (UserId),
     CONSTRAINT UQ_Users_Username     UNIQUE (Username),
     CONSTRAINT UQ_Users_PhoneNumber  UNIQUE (PhoneNumber),
     -- Role phải thuộc tập giá trị contract (DB-05)
-    CONSTRAINT CK_Users_Role CHECK (Role IN (N'GUEST', N'CUSTOMER', N'COURT_MANAGER', N'MANAGER'))
+    CONSTRAINT CK_Users_Role CHECK (Role IN (N'GUEST', N'CUSTOMER', N'COURT_MANAGER', N'MANAGER')),
+    -- IMP-02 (data quality): định danh không được rỗng, số điện thoại chỉ gồm chữ số
+    CONSTRAINT CK_Users_Username_NotBlank  CHECK (LEN(LTRIM(RTRIM(Username))) >= 3),
+    CONSTRAINT CK_Users_PhoneNumber_Digits CHECK (PhoneNumber NOT LIKE N'%[^0-9]%' AND LEN(PhoneNumber) BETWEEN 9 AND 15),
+    CONSTRAINT CK_Users_Email_Format CHECK (
+        Email IS NULL OR (LEN(Email) BETWEEN 5 AND 254 AND Email NOT LIKE N'% %' AND Email LIKE N'%_@_%._%')
+    ),
+    CONSTRAINT CK_Users_PasswordResetAttempts CHECK (PasswordResetAttempts BETWEEN 0 AND 5)
 );
 GO
 
@@ -61,7 +72,10 @@ CREATE TABLE dbo.Courts
     CONSTRAINT CK_Courts_PricePerThreeHours_GT0 CHECK (PricePerThreeHours > 0),
     -- Bộ giá trị theo contract (DB-05)
     CONSTRAINT CK_Courts_SurfaceType CHECK (SurfaceType IN (N'STANDARD', N'VIP')),
-    CONSTRAINT CK_Courts_SizeType    CHECK (SizeType    IN (N'SINGLE', N'DOUBLE'))
+    CONSTRAINT CK_Courts_SizeType    CHECK (SizeType    IN (N'SINGLE', N'DOUBLE')),
+    -- IMP-02 (data quality): tên/địa chỉ sân không được rỗng hoặc chỉ toàn khoảng trắng
+    CONSTRAINT CK_Courts_CourtName_NotBlank CHECK (LEN(LTRIM(RTRIM(CourtName))) > 0),
+    CONSTRAINT CK_Courts_Address_NotBlank   CHECK (LEN(LTRIM(RTRIM(Address)))   > 0)
 );
 GO
 
@@ -85,7 +99,31 @@ CREATE TABLE dbo.Bookings
     -- Start < End (DB-04)
     CONSTRAINT CK_Bookings_Start_LT_End CHECK (StartTime < EndTime),
     -- Status thuộc tập giá trị contract (DB-05)
-    CONSTRAINT CK_Bookings_Status CHECK (Status IN (N'PENDING', N'BOOKED', N'COMPLETED', N'REJECTED', N'CANCELLED'))
+    CONSTRAINT CK_Bookings_Status CHECK (Status IN (N'PENDING', N'BOOKED', N'COMPLETED', N'REJECTED', N'CANCELLED')),
+    /* ------------------------------------------------------------------
+       IMP-01 (defense-in-depth): các Business Rules 3.1 trước đây CHỈ được
+       enforce trong stored procedure. Nếu ai đó INSERT/UPDATE trực tiếp bằng
+       T-SQL (hoặc SP tương lai viết sai) thì dữ liệu rác vẫn vào được bảng.
+       4 CHECK dưới đây chốt luật ngay ở tầng schema:
+         - Thời lượng 60..180 phút (min 1h, max 3h)
+         - Mốc 30 phút, không có giây lẻ
+         - Trong giờ hoạt động 06:00-22:00
+         - Không vắt qua nửa đêm (cùng 1 ngày)
+       ------------------------------------------------------------------ */
+    CONSTRAINT CK_Bookings_Duration_60_180 CHECK (DATEDIFF(MINUTE, StartTime, EndTime) BETWEEN 60 AND 180),
+    CONSTRAINT CK_Bookings_Slot30 CHECK
+    (
+        DATEPART(MINUTE, StartTime) % 30 = 0 AND DATEPART(SECOND, StartTime) = 0
+        AND DATEPART(MINUTE, EndTime) % 30 = 0 AND DATEPART(SECOND, EndTime) = 0
+    ),
+    CONSTRAINT CK_Bookings_OperatingHours CHECK
+    (
+        (DATEPART(HOUR, StartTime) * 60 + DATEPART(MINUTE, StartTime)) >= 360    -- 06:00
+        AND (DATEPART(HOUR, EndTime) * 60 + DATEPART(MINUTE, EndTime)) <= 1320   -- 22:00
+    ),
+    CONSTRAINT CK_Bookings_SameDay CHECK (CAST(StartTime AS DATE) = CAST(EndTime AS DATE)),
+    -- IMP-02: chi phí không bao giờ âm
+    CONSTRAINT CK_Bookings_TotalCost_GE0 CHECK (TotalCost >= 0)
 );
 GO
 
@@ -120,7 +158,9 @@ CREATE TABLE dbo.Notifications
     CreatedAt      DATETIME2(0)     NOT NULL CONSTRAINT DF_Notifications_CreatedAt DEFAULT SYSDATETIME(),
     CONSTRAINT PK_Notifications PRIMARY KEY (NotificationId),
     CONSTRAINT FK_Notifications_User_Users     FOREIGN KEY (UserId)     REFERENCES dbo.Users(UserId),
-    CONSTRAINT FK_Notifications_Booking_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings(BookingId)
+    CONSTRAINT FK_Notifications_Booking_Bookings FOREIGN KEY (BookingId) REFERENCES dbo.Bookings(BookingId),
+    -- IMP-02 (data quality): không cho phép thông báo rỗng
+    CONSTRAINT CK_Notifications_Message_NotBlank CHECK (LEN(LTRIM(RTRIM(Message))) > 0)
 );
 GO
 

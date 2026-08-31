@@ -22,8 +22,15 @@
 import sql from 'mssql';
 import type { AppConfig } from '../config.js';
 import { buildSqlConfig } from './connection.js';
+import {
+  expiredSessionIds,
+  isSessionExpired,
+  touchSession,
+  type SessionExpiryPolicy,
+  type SessionTimestamps,
+} from './sessionExpiry.js';
 
-interface SessionConnection {
+interface SessionConnection extends SessionTimestamps {
   conn: sql.ConnectionPool;
   /** Promise chain that serializes work on this connection. */
   queue: Promise<unknown>;
@@ -34,12 +41,56 @@ export interface SessionContextValues {
   role: string | null;
 }
 
+/**
+ * IMP-11: ném ra khi đã đạt trần số phiên đăng nhập đồng thời
+ * (cfg.maxSessionConnections). Mỗi phiên giữ 1 connection SQL riêng, nên
+ * không có trần thì số người đăng nhập = số connection đập vào SQL Server.
+ * Route /api/auth/login bắt lỗi này và trả HTTP 503 thay vì để SQL Server
+ * hoặc OS tụt đột ngột.
+ */
+export class TooManySessionsError extends Error {
+  readonly limit: number;
+  constructor(limit: number) {
+    super(`Too many concurrent SQL session connections (limit ${limit})`);
+    this.name = 'TooManySessionsError';
+    this.limit = limit;
+  }
+}
+
 export class SessionDb {
   private readonly sessions = new Map<string, SessionConnection>();
   private readonly cfg: AppConfig;
+  private readonly expiryPolicy: SessionExpiryPolicy;
+  private reaper: NodeJS.Timeout | null = null;
 
   constructor(cfg: AppConfig) {
     this.cfg = cfg;
+    this.expiryPolicy = {
+      ttlMs: cfg.sessionTtlMs,
+      idleTimeoutMs: cfg.sessionIdleTimeoutMs,
+    };
+  }
+
+  /** Evict expired entries so an abandoned browser session cannot leak a SQL connection. */
+  async sweepExpiredSessions(now = Date.now()): Promise<number> {
+    const expiredIds = expiredSessionIds(this.sessions.entries(), this.expiryPolicy, now);
+    await Promise.all(expiredIds.map((id) => this.closeSession(id)));
+    return expiredIds.length;
+  }
+
+  /** Start one idempotent background reaper; index.ts owns its lifecycle. */
+  startReaper(): void {
+    if (this.reaper) return;
+    this.reaper = setInterval(() => {
+      void this.sweepExpiredSessions();
+    }, this.cfg.sessionSweepIntervalMs);
+    this.reaper.unref();
+  }
+
+  stopReaper(): void {
+    if (!this.reaper) return;
+    clearInterval(this.reaper);
+    this.reaper = null;
   }
 
   /**
@@ -50,6 +101,14 @@ export class SessionDb {
   async createSession<T>(sessionId: string, fn: (conn: sql.ConnectionPool) => Promise<T>): Promise<T> {
     // If an old connection exists under this sessionId, close it first.
     await this.closeSession(sessionId).catch(() => undefined);
+    await this.sweepExpiredSessions();
+
+    // IMP-11: trần số phiên đồng thời. Kiểm tra SAU khi đóng phiên cũ để
+    // đăng nhập lại của chính người đó không bao giờ bị chặn oan.
+    const sessionLimit = Math.trunc(this.cfg.maxSessionConnections);
+    if (Number.isFinite(sessionLimit) && sessionLimit > 0 && this.sessions.size >= sessionLimit) {
+      throw new TooManySessionsError(sessionLimit);
+    }
 
     const connConfig = buildSqlConfig(this.cfg);
     // Dedicated single-connection pool for the whole session. min = max = 1 keeps
@@ -60,7 +119,24 @@ export class SessionDb {
     const conn = new sql.ConnectionPool(connConfig);
     await conn.connect();
 
-    const holder: SessionConnection = { conn, queue: Promise.resolve() };
+    // IMP-10: LOCK_TIMEOUT ở TẦNG APP (không đặt trong Stored Procedure, vì các
+    // demo tests/concurrency cần phiên B chặn thật 8–20 giây để lấy bằng chứng).
+    // Mặc định SQL Server là chờ VÔ HẠN; khi 2000 người tranh hàng khoá của
+    // dbo.Courts thì request sẽ treo tới khi driver tự timeout, trong khi giao
+    // dịch vẫn chạy tiếp trong SQL. Đặt LOCK_TIMEOUT để SQL tự huỷ (lỗi 1222),
+    // sau đó withTransientRetry (db/retry.ts) thử lại.
+    const lockTimeoutMs = Math.trunc(this.cfg.dbLockTimeoutMs);
+    if (Number.isFinite(lockTimeoutMs) && lockTimeoutMs >= 0) {
+      await conn.request().query(`SET LOCK_TIMEOUT ${lockTimeoutMs};`);
+    }
+
+    const now = Date.now();
+    const holder: SessionConnection = {
+      conn,
+      queue: Promise.resolve(),
+      createdAt: now,
+      lastUsedAt: now,
+    };
     this.sessions.set(sessionId, holder);
 
     try {
@@ -79,9 +155,15 @@ export class SessionDb {
    */
   async withExistingConnection<T>(sessionId: string, fn: (conn: sql.ConnectionPool) => Promise<T>): Promise<T> {
     const holder = this.sessions.get(sessionId);
+    const now = Date.now();
+    if (holder && isSessionExpired(holder, this.expiryPolicy, now)) {
+      await this.closeSession(sessionId);
+      throw new Error('No active SQL session connection');
+    }
     if (!holder || !holder.conn.connected) {
       throw new Error('No active SQL session connection');
     }
+    touchSession(holder, now);
     const run = holder.queue.then(() => fn(holder.conn));
     holder.queue = run.catch(() => undefined);
     return run;
@@ -157,16 +239,20 @@ export class SessionDb {
   /** True when a live dedicated connection is still registered for this session. */
   hasSession(sessionId: string): boolean {
     const holder = this.sessions.get(sessionId);
-    return Boolean(holder && holder.conn.connected);
+    return Boolean(holder && !isSessionExpired(holder, this.expiryPolicy) && holder.conn.connected);
   }
 
   /** Number of live session connections (diagnostics/health). */
   activeCount(): number {
-    return this.sessions.size;
+    const now = Date.now();
+    return [...this.sessions.values()].filter(
+      (holder) => !isSessionExpired(holder, this.expiryPolicy, now) && holder.conn.connected,
+    ).length;
   }
 
   /** Close every session connection (server shutdown). */
   async closeAll(): Promise<void> {
+    this.stopReaper();
     const ids = [...this.sessions.keys()];
     await Promise.all(ids.map((id) => this.closeSession(id)));
   }

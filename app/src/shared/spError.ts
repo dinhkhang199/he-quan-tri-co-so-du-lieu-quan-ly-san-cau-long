@@ -68,16 +68,42 @@ const SQL_ERROR_MAP: Record<number, string> = {
   50092: 'Court Manager chỉ thao tác sân thuộc quyền mình.',
   50100: 'Không tìm thấy notification của người dùng này.',
   50110: 'Phiên đăng nhập chưa được thiết lập; chỉ MANAGER/COURT_MANAGER được xem dashboard.',
+  50120: 'Bạn phải nhập đầy đủ thời gian bắt đầu và kết thúc.',
+  50121: 'Thời gian kết thúc phải lớn hơn thời gian bắt đầu.',
+  50122: 'Thời gian phải theo bước 30 phút (00 hoặc 30, không có giây/mili-giây).',
+  50123: 'Khoảng tìm kiếm phải nằm trong cùng một ngày (không được qua đêm).',
+  50124: 'Thời lượng tìm sân phải từ 1 đến 3 giờ.',
+  50125: 'Khoảng tìm kiếm phải nằm trong khung hoạt động 06:00–22:00.',
+  50126: 'Không cho phép tìm sân trong quá khứ.',
+  50200: 'Thông tin đăng ký không hợp lệ.',
+  50201: 'Tên đăng nhập đã được sử dụng.',
+  50202: 'Số điện thoại đã được sử dụng.',
+  50203: 'Mật khẩu phải dài 8–72 ký tự và có cả chữ lẫn số.',
+  50204: 'Email đã được sử dụng.',
+  50210: 'Không tìm thấy tài khoản khớp thông tin khôi phục.',
+  50211: 'Mã khôi phục đã hết hạn hoặc không còn hiệu lực.',
+  50212: 'Mã khôi phục không đúng hoặc không hợp lệ.',
+  50213: 'Yêu cầu xác thực không hợp lệ.',
   51000: 'Chuyển trạng thái booking không hợp lệ.',
   51001: 'Sân đã có booking được xác nhận (BOOKED) trong khung giờ này.',
   51054: 'Chưa đăng nhập: phải gọi sp_Login trước (SESSION_CONTEXT rỗng) hoặc UserId không khớp.',
   51060: 'Chưa đăng nhập: phải gọi sp_Login trước (SESSION_CONTEXT rỗng) hoặc UserId không khớp.',
   51061: 'Phiên đăng nhập chưa được thiết lập hoặc UserId không khớp.',
   1205: 'Xung đột deadlock (1205). Vui lòng thử lại sau.',
+  // IMP-10: SET LOCK_TIMEOUT ở tầng app (SessionDb) làm SQL tự huỷ giao dịch
+  // chờ khoá quá lâu thay vì treo vô hạn. Giao dịch đã rollback → thử lại an toàn.
+  1222: 'Hệ thống đang quá tải (chờ khoá quá lâu). Vui lòng thử lại sau vài giây.',
+  // IMP-09: vi phạm UQ_Bookings_OnePendingPerUserSlot (unique filtered index).
+  2601: 'Bạn đã có một yêu cầu đặt sân đang chờ duyệt cho đúng sân và khung giờ này.',
 };
 
 /** Peek the TECHNICAL error number out of an unknown mssql error. */
 function errNumber(err: unknown): number | null {
+  // IMP-12 (lỗi do test SE-07 phát hiện): err có thể là null / undefined / chuỗi
+  // (một `throw` không phải Error, hoặc promise reject với undefined). Khi đó
+  // đọc thuộc tính `.number` sẽ ném TypeError NGAY TRONG error handler, biến một
+  // lỗi nhỏ thành 500 không thông báo. Chặn ngay tại đây.
+  if (err === null || (typeof err !== 'object' && typeof err !== 'function')) return null;
   const e = err as Partial<RequestError>;
   if (typeof e.number === 'number') return e.number;
   if (typeof e.code === 'number') return e.code;

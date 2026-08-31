@@ -39,7 +39,11 @@ BEGIN
 
     DECLARE @Minutes INT = DATEDIFF(MINUTE, @StartTime, @EndTime);
 
-    RETURN (@Minutes / 180) * @PricePerThreeHours + ((@Minutes % 180) * @PricePerHour) / 60;
+    -- IMP-05: trước đây phép chia thực hiện trên DECIMAL(12,0) (scale 0) nên phần lẻ
+    -- bị làm tròn sớm khi thời lượng không chia hết 60 phút. Tính ở DECIMAL(18,4)
+    -- rồi ROUND về đồng => kết quả xác định, vẫn khớp các mốc 30 phút.
+    RETURN (@Minutes / 180) * @PricePerThreeHours
+         + ROUND(CAST(@Minutes % 180 AS DECIMAL(18,4)) * @PricePerHour / 60.0, 0);
 END
 GO
 

@@ -6,43 +6,43 @@
  * l_ch_s_t_s_n_badmintonpro_final_polish and th_ng_b_o_badmintonpro_production_final_logic_cleaned.
  */
 :root {
-  /* ---- Brand teal scale (from guest/login screens) ---- */
-  --bp-brand-50: #f0fdfa;
-  --bp-brand-100: #ccfbf1;
-  --bp-brand-200: #99f6e4;
-  --bp-brand-300: #5eead4;
-  --bp-brand-400: #2dd4bf;
-  --bp-brand-500: #14b8a6;
-  --bp-brand-600: #0d9488;
-  --bp-brand-700: #00796f;
-  --bp-brand-800: #115e59;
-  --bp-brand-900: #134e4a;
-  --bp-brand-950: #042f2e;
+  /* ---- Mid-Autumn vermilion + moon-gold scale ---- */
+  --bp-brand-50: #fff8e8;
+  --bp-brand-100: #ffedbd;
+  --bp-brand-200: #f8d979;
+  --bp-brand-300: #f2bd4b;
+  --bp-brand-400: #e99a2e;
+  --bp-brand-500: #d97822;
+  --bp-brand-600: #c4572e;
+  --bp-brand-700: #aa3f2b;
+  --bp-brand-800: #7f3029;
+  --bp-brand-900: #51231f;
+  --bp-brand-950: #2d1718;
 
   /* ---- Semantic brand ---- */
-  --bp-color-primary: #00796f;
-  --bp-color-primary-deep: #00685f;
-  --bp-color-primary-container: #008378;
+  --bp-color-primary: #b7442d;
+  --bp-color-primary-deep: #92321f;
+  --bp-color-primary-container: #c95634;
   --bp-color-on-primary: #ffffff;
-  --bp-color-on-primary-container: #f4fffc;
+  --bp-color-on-primary-container: #fff9ed;
 
   /* ---- Surfaces ---- */
-  --bp-color-background: #f8fafc;
-  --bp-color-surface: #ffffff;
-  --bp-color-surface-lowest: #ffffff;
-  --bp-color-surface-low: #f1f5f9;
-  --bp-color-surface-container: #eaefed;
-  --bp-color-surface-high: #e2e8f0;
-  --bp-color-surface-highest: #dee4e1;
+  --bp-color-background: #f5efdf;
+  --bp-color-surface: #fffaf0;
+  --bp-color-surface-lowest: #fffcf6;
+  --bp-color-surface-low: #f9f0da;
+  --bp-color-surface-container: #f1e3c4;
+  --bp-color-surface-high: #e7d3aa;
+  --bp-color-surface-highest: #dcc391;
 
   /* ---- Text ---- */
-  --bp-color-on-surface: #171d1c;
-  --bp-color-on-surface-variant: #475569;
+  --bp-color-on-surface: #2b211f;
+  --bp-color-on-surface-variant: #6e5a4a;
 
   /* ---- Outline ---- */
-  --bp-color-outline: #94a3b8;
-  --bp-color-outline-variant: #cbd5e1;
-  --bp-color-outline-soft: rgba(203, 213, 225, 0.3);
+  --bp-color-outline: #ad9272;
+  --bp-color-outline-variant: #d8c49e;
+  --bp-color-outline-soft: rgba(178, 139, 83, 0.22);
 
   /* ---- Error ---- */
   --bp-color-error: #ba1a1a;
@@ -63,7 +63,8 @@
   --bp-status-rejected-fg: #be123c;
 
   /* ---- Typography (DESIGN.md scale) ---- */
-  --bp-font-ui: 'Hanken Grotesk', sans-serif;
+  --bp-font-ui: 'Be Vietnam Pro', sans-serif;
+  --bp-font-display: 'Lora', 'Times New Roman', serif;
   --bp-font-mono: 'JetBrains Mono', monospace;
   --bp-text-display-lg: 700 2.25rem/2.75rem var(--bp-font-ui);
   --bp-text-headline-lg-mobile: 700 1.75rem/2.25rem var(--bp-font-ui);
@@ -92,9 +93,9 @@
   --bp-radius-full: 9999px;
 
   /* ---- Shadows ---- */
-  --bp-shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  --bp-shadow-premium: 0 10px 40px -10px rgba(0, 121, 111, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
-  --bp-shadow-popover: 0 20px 60px -18px rgba(0, 0, 0, 0.25);
+  --bp-shadow-card: 0 8px 22px -12px rgba(74, 35, 24, 0.22), 0 2px 5px rgba(74, 35, 24, 0.06);
+  --bp-shadow-premium: 0 18px 52px -18px rgba(95, 47, 28, 0.24), 0 2px 8px rgba(74, 35, 24, 0.07);
+  --bp-shadow-popover: 0 24px 70px -20px rgba(20, 25, 54, 0.38);
 
   /* ---- Layout ---- */
   --bp-sidebar-width: 18rem;

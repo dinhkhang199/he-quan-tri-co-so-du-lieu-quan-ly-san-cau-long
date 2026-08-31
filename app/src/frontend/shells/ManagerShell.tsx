@@ -6,6 +6,7 @@ import { BrandLogo } from '../components/BrandLogo';
 import { BpIcon } from '../components/BpIcon';
 import { SearchInput } from '../components/Input';
 import { useAuth } from '../auth/AuthContext';
+import { FestivalDecor } from '../components/FestivalDecor';
 
 interface ManagerNavItem {
   to: string;
@@ -16,7 +17,7 @@ interface ManagerNavItem {
 const MANAGER_NAV: ManagerNavItem[] = [
   { to: '/manager/dashboard', label: 'Bảng điều khiển', icon: 'dashboard' },
   { to: '/manager/bookings', label: 'Quản lý booking', icon: 'calendar_month' },
-  { to: '/manager/courts', label: 'Quản lý sân', icon: 'sports_badminton' },
+  { to: '/manager/courts', label: 'Quản lý sân', icon: 'stadium' },
   { to: '/manager/notifications', label: 'Thông báo', icon: 'notifications' },
 ];
 
@@ -54,6 +55,7 @@ export function ManagerShell({ role }: ManagerShellProps) {
 
   return (
     <div className="bp-manager">
+      <FestivalDecor />
       {/* Sidebar (desktop) */}
       <aside className="bp-manager__side">
         <div className="bp-manager__brand">

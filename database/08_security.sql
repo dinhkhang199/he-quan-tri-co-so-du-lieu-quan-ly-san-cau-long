@@ -17,9 +17,12 @@ GO
 -- Nếu $(BCM_APP_PASSWORD) chưa được thay thế (chạy ngoài SQLCMD mode), script sẽ fail rõ ràng.
 IF SUSER_ID(N'bcm_app') IS NULL
 BEGIN
-    IF CAST('$(BCM_APP_PASSWORD)' AS NVARCHAR(4000)) LIKE '%$(BCM_APP_PASSWORD)%'
+    DECLARE @rawAppPassword NVARCHAR(4000) = CAST('$(BCM_APP_PASSWORD)' AS NVARCHAR(4000));
+    -- Keep the sentinel split in the source so SQLCMD does not substitute the
+    -- comparison value as well as the supplied value.
+    IF @rawAppPassword = N'$' + N'(BCM_APP_PASSWORD)'
         THROW 50100, N'BCM_APP_PASSWORD SQLCMD variable is not set. Run with: -v BCM_APP_PASSWORD="<password>"', 1;
-    DECLARE @loginSql NVARCHAR(4000) = N'CREATE LOGIN bcm_app WITH PASSWORD = N''' + CAST('$(BCM_APP_PASSWORD)' AS NVARCHAR(4000)) + N''', CHECK_POLICY = OFF, CHECK_EXPIRATION = OFF;';
+    DECLARE @loginSql NVARCHAR(4000) = N'CREATE LOGIN bcm_app WITH PASSWORD = N''' + REPLACE(@rawAppPassword, N'''', N'''''') + N''', CHECK_POLICY = OFF, CHECK_EXPIRATION = OFF;';
     EXEC sp_executesql @loginSql;
 END
 GO
@@ -75,8 +78,8 @@ GRANT EXECUTE ON SCHEMA::dbo TO bcm_app_role;
 -- vw_AvailableCourts: public/guest active-court availability path.
 GRANT SELECT ON OBJECT::dbo.vw_AvailableCourts TO bcm_app_role;
 -- vw_AllBookings: authenticated manager booking-list path. Row-level scope
--- (MANAGER all / COURT_MANAGER owned courts) is applied by the application SQL
--- using SESSION_CONTEXT on the authenticated connection — never client-side.
+-- (MANAGER all / COURT_MANAGER owned courts) is enforced inside the view itself
+-- using SESSION_CONTEXT on the authenticated connection.
 GRANT SELECT ON OBJECT::dbo.vw_AllBookings TO bcm_app_role;
 -- dbo.Courts: authenticated court-management READ path (Phase 2.7). The
 -- management screen must list BOTH active and inactive courts for the locked
@@ -90,11 +93,12 @@ GRANT SELECT ON OBJECT::dbo.Courts TO bcm_app_role;
 -- vw_BookingHistory, vw_AdminDashboard chứa dữ liệu toàn bộ booking → app chỉ
 -- truy cập qua SP (sp_GetMyBookings, sp_GetDashboard...) với EXECUTE AS OWNER.
 -- Ngoài ra: Column-level DENY bên dưới chặn PasswordHash kể cả khi có SELECT bảng;
--- scope theo chủ sân của vw_AllBookings luôn do application enforce bằng
--- SESSION_CONTEXT trên connection đã đăng nhập, không dựa vào lọc ở client.
+-- scope theo chủ sân của vw_AllBookings được view tự enforce bằng
+-- SESSION_CONTEXT trên connection đã đăng nhập, không phụ thuộc caller.
 
 -- Column-level DENY: ngay cả khi có quyền SELECT bảng, PasswordHash vẫn bị chặn
 DENY SELECT ON dbo.Users(PasswordHash) TO bcm_app_role;
+DENY SELECT ON dbo.Users(PasswordResetCodeHash) TO bcm_app_role;
 -- ActivityLogs chứa audit nhạy cảm → không cho phép SELECT trực tiếp
 DENY SELECT ON OBJECT::dbo.ActivityLogs TO bcm_app_role;
 

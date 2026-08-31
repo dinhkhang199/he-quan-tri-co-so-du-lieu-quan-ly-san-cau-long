@@ -26,16 +26,16 @@ GO
 -- ------------------------------------------------------------
 -- USERS
 -- ------------------------------------------------------------
-INSERT INTO dbo.Users (UserId, Username, PasswordHash, PhoneNumber, Role, IsActive, LastLogin)
+INSERT INTO dbo.Users (UserId, Username, PasswordHash, PhoneNumber, Email, Role, IsActive, LastLogin)
 SELECT * FROM (VALUES
-    ('A1000001-0000-0000-0000-000000000001', N'manager',       CONVERT(VARBINARY(64), HASHBYTES('SHA2_256', N'bcms|manager123')), N'0901000001', N'MANAGER',        1, NULL),
-    ('A1000001-0000-0000-0000-000000000002', N'courtmanager1', CONVERT(VARBINARY(64), HASHBYTES('SHA2_256', N'bcms|cm1pass')),    N'0901000002', N'COURT_MANAGER',  1, NULL),
-    ('A1000001-0000-0000-0000-000000000003', N'courtmanager2', CONVERT(VARBINARY(64), HASHBYTES('SHA2_256', N'bcms|cm2pass')),    N'0901000003', N'COURT_MANAGER',  1, NULL),
-    ('A1000001-0000-0000-0000-000000000004', N'customer1',     CONVERT(VARBINARY(64), HASHBYTES('SHA2_256', N'bcms|cus1pass')),   N'0901000004', N'CUSTOMER',       1, NULL),
-    ('A1000001-0000-0000-0000-000000000005', N'customer2',     CONVERT(VARBINARY(64), HASHBYTES('SHA2_256', N'bcms|cus2pass')),   N'0901000005', N'CUSTOMER',       1, NULL),
-    ('A1000001-0000-0000-0000-000000000006', N'customer3',     CONVERT(VARBINARY(64), HASHBYTES('SHA2_256', N'bcms|cus3pass')),   N'0901000006', N'CUSTOMER',       1, NULL),
-    ('A1000001-0000-0000-0000-000000000007', N'inactive_user', CONVERT(VARBINARY(64), HASHBYTES('SHA2_256', N'bcms|inactive1')),  N'0901000007', N'CUSTOMER',       0, NULL)
-) AS S(UserId, Username, PasswordHash, PhoneNumber, Role, IsActive, LastLogin);
+    ('A1000001-0000-0000-0000-000000000001', N'manager',       CONVERT(VARBINARY(64), HASHBYTES('SHA2_256', N'bcms|manager123')), N'0901000001', N'manager@badmintonpro.local',       N'MANAGER',        1, NULL),
+    ('A1000001-0000-0000-0000-000000000002', N'courtmanager1', CONVERT(VARBINARY(64), HASHBYTES('SHA2_256', N'bcms|cm1pass')),    N'0901000002', N'courtmanager1@badmintonpro.local', N'COURT_MANAGER',  1, NULL),
+    ('A1000001-0000-0000-0000-000000000003', N'courtmanager2', CONVERT(VARBINARY(64), HASHBYTES('SHA2_256', N'bcms|cm2pass')),    N'0901000003', N'courtmanager2@badmintonpro.local', N'COURT_MANAGER',  1, NULL),
+    ('A1000001-0000-0000-0000-000000000004', N'customer1',     CONVERT(VARBINARY(64), HASHBYTES('SHA2_256', N'bcms|cus1pass')),   N'0901000004', N'customer1@badmintonpro.local',     N'CUSTOMER',       1, NULL),
+    ('A1000001-0000-0000-0000-000000000005', N'customer2',     CONVERT(VARBINARY(64), HASHBYTES('SHA2_256', N'bcms|cus2pass')),   N'0901000005', N'customer2@badmintonpro.local',     N'CUSTOMER',       1, NULL),
+    ('A1000001-0000-0000-0000-000000000006', N'customer3',     CONVERT(VARBINARY(64), HASHBYTES('SHA2_256', N'bcms|cus3pass')),   N'0901000006', N'customer3@badmintonpro.local',     N'CUSTOMER',       1, NULL),
+    ('A1000001-0000-0000-0000-000000000007', N'inactive_user', CONVERT(VARBINARY(64), HASHBYTES('SHA2_256', N'bcms|inactive1')),  N'0901000007', N'inactive@badmintonpro.local',      N'CUSTOMER',       0, NULL)
+) AS S(UserId, Username, PasswordHash, PhoneNumber, Email, Role, IsActive, LastLogin);
 GO
 
 -- ------------------------------------------------------------
@@ -150,8 +150,10 @@ SELECT * FROM (VALUES
 
 INSERT INTO dbo.Notifications (NotificationId, UserId, BookingId, Message, IsRead)
 SELECT * FROM (VALUES
-    ('E1000001-0000-0000-0000-000000000001', 'A1000001-0000-0000-0000-000000000002', 'B1000001-0000-0000-0000-000000000001', N'Booking của bạn đã được duyệt (BOOKED): Sân 01.', 1),
-    ('E1000001-0000-0000-0000-000000000002', 'A1000001-0000-0000-0000-000000000003', 'B1000001-0000-0000-0000-000000000015', N'Booking của bạn đã được duyệt (BOOKED): Sân 04.', 0)
+    -- IMP-06: người nhận notification phải là CHỦ booking (khớp trg_Bookings_NotifyStatus),
+    -- không phải court manager đã duyệt. b1 -> customer1 (A...0004), b15 -> customer2 (A...0005).
+    ('E1000001-0000-0000-0000-000000000001', 'A1000001-0000-0000-0000-000000000004', 'B1000001-0000-0000-0000-000000000001', N'Booking của bạn đã được duyệt (BOOKED): Sân 01.', 1),
+    ('E1000001-0000-0000-0000-000000000002', 'A1000001-0000-0000-0000-000000000005', 'B1000001-0000-0000-0000-000000000015', N'Booking của bạn đã được duyệt (BOOKED): Sân 04.', 0)
 ) AS S(NotificationId, UserId, BookingId, Message, IsRead);
 GO
 

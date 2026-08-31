@@ -7,6 +7,7 @@ import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { roleHome } from '../auth/guards';
 import { useAuth } from '../auth/AuthContext';
+import { FestivalDecor } from '../components/FestivalDecor';
 
 /**
  * Login screen (locked Stitch login_premium_polished_v2_badmintonpro).
@@ -45,20 +46,17 @@ export function LoginPage() {
     <div className="bp-login">
       {/* Left visual area (desktop, >= 768px) */}
       <div className="bp-login__hero" aria-hidden="true">
+        <FestivalDecor variant="hero" />
         <div className="bp-login__court-lines" />
-        <div className="bp-login__hero-brand">
-          <BrandLogo showName={false} size="lg" />
-        </div>
-
         {/* Floating Glass Chips in center visual area */}
         <div className="bp-login__floating-chips">
           <span className="bp-login__chip bp-login__chip--pos-1 bp-login__chip--float-1">
             <BpIcon name="calendar_month" size={18} />
-            Quản lý lịch sân
+            Hẹn sân mùa trăng
           </span>
           <span className="bp-login__chip bp-login__chip--pos-2 bp-login__chip--float-2">
-            <BpIcon name="flash_on" size={18} />
-            Đặt sân nhanh chóng
+            <BpIcon name="group" size={18} />
+            Gắn kết bạn bè
           </span>
           <span className="bp-login__chip bp-login__chip--pos-3 bp-login__chip--float-3">
             <BpIcon name="schedule" size={18} />
@@ -70,18 +68,18 @@ export function LoginPage() {
         <div className="bp-login__hero-bottom">
           <div className="bp-login__glass-panel">
             <h1 className="bp-login__hero-title">
-              Quản lý sân thông minh.
+              Giao cầu đón trăng.
               <br />
-              Vận hành dễ dàng.
+              Đoàn viên trọn niềm vui.
             </h1>
-            <p className="bp-login__hero-sub">Theo dõi lịch sân, booking và hoạt động trên một hệ thống duy nhất.</p>
+            <p className="bp-login__hero-sub">Một mùa Trung Thu ấm áp bắt đầu từ những cuộc hẹn trên sân.</p>
           </div>
         </div>
       </div>
 
       {/* Mobile hero banner (< 768px) */}
       <div className="bp-login__hero-mobile" aria-hidden="true">
-        <h1>Quản lý sân thông minh.</h1>
+        <h1>Giao cầu đón trăng.</h1>
       </div>
 
       {/* Right login panel */}
@@ -91,8 +89,9 @@ export function LoginPage() {
             <div className="bp-login__logo">
               <BrandLogo showName={false} size="md" />
             </div>
+            <p className="bp-login__eyebrow bp-login__eyebrow--panel">TRUNG THU 2026</p>
             <h2 className="bp-login__title">BadmintonPro</h2>
-            <p className="bp-login__subtitle">Hệ thống quản lý sân cầu lông</p>
+            <p className="bp-login__subtitle">Đăng nhập để tiếp tục hành trình mùa trăng</p>
           </div>
 
           <form className="bp-login__form" onSubmit={handleSubmit} aria-busy={submitting}>
@@ -162,6 +161,11 @@ export function LoginPage() {
               Đăng nhập <BpIcon name="arrow_forward" size={20} aria-hidden="true" />
             </Button>
           </form>
+
+          <div className="bp-login__account-links">
+            <NavLink to="/forgot-password">Quên mật khẩu?</NavLink>
+            <NavLink to="/register">Đăng ký tài khoản</NavLink>
+          </div>
 
           <div className="bp-login__guest-wrap">
             <NavLink to="/courts" className="bp-login__guest">

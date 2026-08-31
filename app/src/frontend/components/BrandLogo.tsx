@@ -9,7 +9,7 @@ interface BrandLogoProps {
 }
 
 /**
- * BadmintonPro brand block (the `sports_badminton` mark + wordmark),
+ * BadmintonPro brand block (the court/stadium mark + wordmark),
  * matching the locked Stitch shells.
  */
 export function BrandLogo({ showName = true, size = 'md', className }: BrandLogoProps) {
@@ -17,9 +17,14 @@ export function BrandLogo({ showName = true, size = 'md', className }: BrandLogo
   return (
     <div className={`bp-brand bp-brand--${size}${className ? ` ${className}` : ''}`}>
       <span className="bp-brand__mark">
-        <BpIcon name="sports_badminton" filled size={mark} />
+        <BpIcon name="stadium" filled size={mark} />
       </span>
-      {showName && <span className="bp-brand__name">BadmintonPro</span>}
+      {showName ? (
+        <span className="bp-brand__copy">
+          <span className="bp-brand__name">BadmintonPro</span>
+          <span className="bp-brand__festival">Đêm hội trăng rằm</span>
+        </span>
+      ) : null}
     </div>
   );
 }

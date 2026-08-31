@@ -4,6 +4,8 @@ import { Card } from './components/Card';
 import { EmptyState } from './components/EmptyState';
 import { Button } from './components/Button';
 import { LoginPage } from './pages/LoginPage';
+import { RegisterPage } from './pages/RegisterPage';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { CourtsPage } from './pages/CourtsPage';
 import { BookingDetailPage } from './pages/BookingDetailPage';
 import { MyBookingsPage } from './pages/MyBookingsPage';
@@ -42,6 +44,8 @@ export function App() {
 
       {/* Public */}
       <Route path="/login" element={<GuestOnly><LoginPage /></GuestOnly>} />
+      <Route path="/register" element={<GuestOnly><RegisterPage /></GuestOnly>} />
+      <Route path="/forgot-password" element={<GuestOnly><ForgotPasswordPage /></GuestOnly>} />
       <Route path="/courts" element={<CourtsShell />}>
         <Route index element={<CourtsPage />} />
       </Route>

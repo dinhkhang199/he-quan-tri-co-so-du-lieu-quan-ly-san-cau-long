@@ -131,8 +131,13 @@ function CourtCard({
           <img className={['bp-court__img', active ? '' : 'bp-court__img--dim'].filter(Boolean).join(' ')} src={court.ImageUrl} alt={court.CourtName} />
         ) : (
           <div className="bp-court__media-fallback" aria-hidden="true">
-            <BpIcon name="sports_badminton" size={56} />
-            <span>BadmintonPro</span>
+            <img
+              className="bp-pixel-court-image"
+              src="/assets/badminton-court-mid-autumn-pixel.png"
+              alt=""
+              loading="lazy"
+              decoding="async"
+            />
           </div>
         )}
         <div className={active ? 'bp-court__status bp-court__status--active' : 'bp-court__status bp-court__status--inactive'}>
@@ -455,7 +460,7 @@ export function ManagerCourtsPage() {
           {filtered.length === 0 ? (
             <div className="bp-courts-mgr__card">
               <EmptyState
-                icon="sports_badminton"
+                icon="stadium"
                 title={courts.length === 0 ? 'Chưa có sân' : 'Không có kết quả phù hợp'}
                 description={
                   courts.length === 0

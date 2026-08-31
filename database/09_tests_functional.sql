@@ -199,13 +199,15 @@ IF @cost = 320000
 ELSE
     INSERT #Results VALUES('FN-03', N'Cost > 3h = block 3h + giờ lẻ', 0, N'Kết quả: ' + CAST(@cost AS VARCHAR(20)));
 
--- ================= SP-01: Book hợp lệ (actor = cus2) =================
+-- ================= SP-01: Book hợp lệ (actor = cus1) =================
+-- Seed đã có cus2/c1/D1_0600 PENDING, nên dùng cus1 để tránh tự đụng
+-- UQ_Bookings_OnePendingPerUserSlot trước khi kiểm tra happy path.
 DECLARE @pendingId1 UNIQUEIDENTIFIER = NEWID();
 DECLARE @tc DECIMAL(12,0);
 DECLARE @ok BIT = 0;
 BEGIN TRY
-    EXEC dbo.sp_Login @Username=N'customer2', @Password=N'cus2pass';
-    EXEC dbo.sp_BookCourt @UserId=@cus2, @CourtId=@c1, @StartTime=@D1_0600, @EndTime=@D1_0700,
+    EXEC dbo.sp_Login @Username=N'customer1', @Password=N'cus1pass';
+    EXEC dbo.sp_BookCourt @UserId=@cus1, @CourtId=@c1, @StartTime=@D1_0600, @EndTime=@D1_0700,
          @BookingId=@pendingId1 OUTPUT, @TotalCost=@tc OUTPUT;
     IF EXISTS (SELECT 1 FROM dbo.Bookings WHERE BookingId=@pendingId1 AND Status=N'PENDING' AND TotalCost=100000)
        AND EXISTS (SELECT 1 FROM dbo.ActivityLogs WHERE BookingId=@pendingId1)
@@ -367,8 +369,21 @@ END CATCH;
 
 -- ================= SP-07: Cancel BOOKED < 3h (customer) bị từ chối, vẫn BOOKED =================
 DECLARE @nearId UNIQUEIDENTIFIER = NEWID();
-DECLARE @nearStart datetime2(0) = DATEADD(MINUTE, 90, SYSDATETIME());
-DECLARE @nearEnd datetime2(0) = DATEADD(MINUTE, 180, SYSDATETIME());
+/* IMP-07: dữ liệu test cũ dùng DATEADD(MINUTE, 90, SYSDATETIME()) nên có giây lẻ,
+   lệch mốc 30 phút và có thể rơi ra ngoài 06:00-22:00 => vi phạm các CHECK mới
+   (CK_Bookings_Slot30 / CK_Bookings_OperatingHours / CK_Bookings_SameDay).
+   Nay căn về mốc 30 phút và kẹp vào khung giờ hoạt động cùng ngày;
+   StartTime vẫn cách "now" dưới 3 giờ nên vẫn kích hoạt rule 50055.
+   Lưu ý: nên chạy bộ test trong khung 06:00-21:00 để case này đúng ngữ nghĩa nhất. */
+DECLARE @nearEpoch datetime2(0) = CAST('2000-01-01T00:00:00' AS datetime2(0));
+DECLARE @nearDay DATE = CAST(SYSDATETIME() AS DATE);
+DECLARE @nearStart datetime2(0) =
+    DATEADD(MINUTE, 30 * (DATEDIFF(MINUTE, @nearEpoch, DATEADD(MINUTE, 60, SYSDATETIME())) / 30), @nearEpoch);
+IF @nearStart < DATETIME2FROMPARTS(YEAR(@nearDay), MONTH(@nearDay), DAY(@nearDay), 6, 0, 0, 0, 0)
+    SET @nearStart = DATETIME2FROMPARTS(YEAR(@nearDay), MONTH(@nearDay), DAY(@nearDay), 6, 0, 0, 0, 0);
+IF @nearStart > DATETIME2FROMPARTS(YEAR(@nearDay), MONTH(@nearDay), DAY(@nearDay), 21, 0, 0, 0, 0)
+    SET @nearStart = DATETIME2FROMPARTS(YEAR(@nearDay), MONTH(@nearDay), DAY(@nearDay), 21, 0, 0, 0, 0);
+DECLARE @nearEnd datetime2(0) = DATEADD(MINUTE, 60, @nearStart);
 BEGIN TRY
     INSERT INTO dbo.Bookings (BookingId, UserId, CourtId, StartTime, EndTime, Status, TotalCost)
     VALUES (@nearId, @cus1, @c6, @nearStart, @nearEnd, N'BOOKED', 100000);
@@ -594,7 +609,7 @@ BEGIN CATCH
     IF ERROR_NUMBER() = 50030
         INSERT #Results VALUES('SP-12', N'Không SESSION_CONTEXT + UserId manager tùy ý bị chặn', 1, N'Lỗi 50030 phiên chưa đăng nhập');
     ELSE
-        INSERT #Results VALUES('SP-12', N'Không SESSION_CONTEXT + UserId manager tùy ý bị chặn', 0, N'Mã lỗi: ' + CAST(ERROR_NUMBER() AS VARCHAR(10)));
+        INSERT #Results VALUES('SP-12', N'Không SESSION_CONTEXT + UserId manager tùy ý bị chặn', 0, N'Mã l���i: ' + CAST(ERROR_NUMBER() AS VARCHAR(10)));
 END CATCH;
 
 -- SP-13: GetMyBookings chưa đăng nhập (không fallback) -> 51054
@@ -696,11 +711,11 @@ END CATCH;
 -- SP-20: Booking management impersonation - session=customer1, truyền @SessionUserId=@mgr
 --        → sp_ApproveBooking phải bị chặn 50030 (không khớp phiên).
 -- ============================================================
--- Tạo 1 booking PENDING bằng phiên đúng (customer1) để có target
-DECLARE @mgmtId UNIQUEIDENTIFIER = NEWID();
+-- Tái sử dụng booking PENDING của SP-06b. Case đó cố hủy booking của người
+-- khác và phải để booking này nguyên trạng; tạo lại đúng user/court/slot ở
+-- đây sẽ tự đụng UQ_Bookings_OnePendingPerUserSlot trước khi test quyền chạy.
+DECLARE @mgmtId UNIQUEIDENTIFIER = @otherPend;
 EXEC dbo.sp_Login @Username=N'customer1', @Password=N'cus1pass';
-EXEC dbo.sp_BookCourt @UserId=@cus1, @CourtId=@c3, @StartTime=@D1_0900, @EndTime=@D1_1000,
-     @BookingId=@mgmtId OUTPUT, @TotalCost=@tc OUTPUT;
 BEGIN TRY
     -- vẫn session=customer1 nhưng claim là manager
     EXEC dbo.sp_ApproveBooking @SessionUserId=@mgr, @BookingId=@mgmtId;
@@ -858,6 +873,10 @@ FROM #Results;
 SELECT id, name, CASE WHEN [pass]=1 THEN N'PASS' ELSE N'FAIL' END AS Result, note
 FROM #Results
 ORDER BY id;
+
+DECLARE @FunctionalFailed INT = (SELECT COUNT(*) FROM #Results WHERE [pass] = 0);
+IF @FunctionalFailed > 0
+    THROW 51999, N'09_tests_functional.sql có test FAIL; xem bảng kết quả phía trên.', 1;
 
 PRINT N'--- Kết thúc 09_tests_functional.sql. Xem bảng #Results ở trên (Total/Passed/Failed) ---';
 PRINT N'--- Các test multi-session (CC/PH/DL) chạy riêng trong 10→14. ---';
